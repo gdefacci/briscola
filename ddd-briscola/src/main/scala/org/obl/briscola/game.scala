@@ -6,36 +6,64 @@ import scalaz.{-\/, \/, \/-}
 
 import org.obl.briscola.player._
 
+object GameValidator {
+  def checkPlayersNumber(players:Set[PlayerId]) = {
+    val playersNumber = players.size
+    if (playersNumber > GameState.MAX_PLAYERS) Some(TooManyPlayers(players, GameState.MAX_PLAYERS))
+    else if (playersNumber < GameState.MIN_PLAYERS) Some(TooFewPlayers(players, GameState.MIN_PLAYERS))
+    else None
+  }
+  
+  def checkAllPlayersExists(playerById:PlayerId => Option[Player], players:Set[PlayerId]):PlayerDoesNotExists \/ Set[Player] = {
+    players.foldLeft[PlayerDoesNotExists \/ Set[Player]](\/-(Set.empty)) { (acc, i) =>
+      acc match {
+        case err @ -\/(PlayerDoesNotExists(nonExistingPlayers)) => {
+          playerById(i) match {
+            case Some(p) => err
+            case None => -\/(PlayerDoesNotExists(nonExistingPlayers + i))
+          }
+        }
+        case \/-(players) => playerById(i) match {
+          case Some(p) => \/-(players + p)
+          case None => -\/(PlayerDoesNotExists(Set(i)))
+        }
+      }
+    }
+  }
+}
+
 trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, BriscolaError] {
   
   def nextId:GameId
-  def player(playerId:PlayerId):Option[Player]
+  def playerById(name:PlayerId):Option[Player]
   
   def apply(s:GameState, cmd:BriscolaCommand):BriscolaError \/ Seq[BriscolaEvent] = {
     (s, cmd) match {
       case (EmptyGameState, StartGame(players)) => {
-        val playersNumber = players.size
-        if (playersNumber > GameState.MAX_PLAYERS) -\/(TooManyPlayers(players, GameState.MAX_PLAYERS))
-        else if (playersNumber < GameState.MIN_PLAYERS) -\/(TooFewPlayers(players, GameState.MIN_PLAYERS))
-        else {
-          val nonExistingPlayers = players.filter(player(_).isEmpty)
-          if (nonExistingPlayers.nonEmpty) -\/(PlayerDoesNotExists(nonExistingPlayers))
-          else {
-            val (deck, plyrs) = players.foldLeft(Deck.initial -> Seq.empty[PlayerState]) { (acc, pid) =>
-              val (deck, currPlayers) = acc
-              val (cards, newDeck) = deck.takeCards(3)
-              newDeck -> (currPlayers ++ Seq(PlayerState(pid, cards, Set.empty)))
-            }
-            
-            \/-(Seq(GameStarted(ActiveGameState(nextId, deck.cards.last.seed, deck, Nil, plyrs))))
+        GameValidator.checkPlayersNumber(players) match {
+          case Some(err) => -\/(err)
+          case None => GameValidator.checkAllPlayersExists(playerById, players) match {
+            case -\/(err) => -\/(err)
+            case \/-(players) => 
+              val (deck, plyrs) = players.foldLeft(Deck.initial -> Seq.empty[PlayerState]) { (acc, player) =>
+                val (deck, currPlayers) = acc
+                val (cards, newDeck) = deck.takeCards(3)
+                newDeck -> (currPlayers ++ Seq(PlayerState(player.id, cards, Set.empty)))
+              }
+              
+              \/-(Seq(GameStarted(ActiveGameState(nextId, deck.cards.last.seed, deck, Nil, plyrs))))
           }
         }
+           
       }
       case (gm:ActiveGameState, PlayCard(pid, card)) if gm.currentPlayer.id == pid && gm.currentPlayer.cards.contains(card) => {
         \/-(Seq(CardPlayed(gm.id, pid, card)))
       }
       case (gm:ActiveGameState, PlayCard(pid, card)) if gm.currentPlayer.id == pid && !gm.currentPlayer.cards.contains(card) => {
         -\/(PlayerDoesNotOwnCard(pid, card, gm.currentPlayer.cards))
+      }
+      case (gm:ActiveGameState, PlayCard(pid, _)) if !(gm.players contains pid) => {
+        -\/(InvalidPlayer(pid))
       }
       case (gm:ActiveGameState, PlayCard(pid, _)) if gm.currentPlayer.id != pid => {
         -\/(InvalidTurn(pid, gm.currentPlayer.id))
@@ -82,8 +110,10 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
 
   def apply(s:GameState, event:BriscolaEvent):GameState = {
     (s,event) match {
-      case (_, GameStarted(state)) => state
-      case (gm @ ActiveGameState(id, gameSeed, deck, moves, nextPlayers), CardPlayed(cardGameId, cardPlayerId, card)) => {
+      case (_, GameStarted(state)) => 
+        state
+        
+      case (gm @ ActiveGameState(id, gameSeed, deck, moves, nextPlayers), CardPlayed(cardGameId, cardPlayerId, card)) =>
         val newMoves = gm.moves ++ Seq(Move(gm.currentPlayer.copy(cards = gm.currentPlayer.cards.filter(_ != card)), card))
         if (gm.isLastHandTurn) {
           
@@ -99,10 +129,9 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
         } else {
           gm.copy(moves = newMoves, nextPlayers = gm.nextPlayers.tail)
         }
-      }
-      case (s, cmd) => {
-        throw new RuntimeException("forbidden condition state:${s} event:${cmd}")
-      }
+        
+      case (s, cmd) => 
+        throw new RuntimeException(s"forbidden condition state:${s} event:${event}")
     }
   }
 }

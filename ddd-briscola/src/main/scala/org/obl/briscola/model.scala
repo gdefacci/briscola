@@ -68,7 +68,7 @@ case class ActiveGameState(id:GameId, gameSeed:Seed.Value, deck: Deck, moves: Se
   
   lazy val isLastGameTurn = isLastHandTurn && deck.isEmpty
   
-  lazy val players:Seq[PlayerId] = moves.map(_.player.id) ++ nextPlayers.map(_.id)
+  lazy val players:Seq[PlayerState] = moves.map(_.player) ++ nextPlayers
   
 }
 case class FinalGameState(id:GameId, gameSeed:Seed.Value, players:Seq[PlayerFinalState]) extends GameState {

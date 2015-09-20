@@ -20,7 +20,7 @@ class ReplGame(players:Set[PlayerId]) {
   val decider = new GameDecider {
 
     def nextId: GameId = GameId(1)
-    def player(playerId: PlayerId) = Some(Player(playerId, playerId.id.toString))
+    def playerById(playerId: PlayerId) = Some(Player(playerId, playerId.id.toString))
 
   }
 
@@ -51,11 +51,7 @@ class ReplGame(players:Set[PlayerId]) {
 
 object ReplGamePlay extends App {
   
-  def readLine:String = {
-    var buf = Array.ofDim[Byte](256)
-    val len = System.in.read(buf)
-    String.valueOf( buf.slice(0,len).map(_.toChar) )
-  }
+  import scala.io.StdIn.readLine
     
   def parseCard(str:String):String \/ Card = {
     val seed = str.charAt(0).toUpper match {
@@ -84,7 +80,7 @@ ${game.activeGameState.nextPlayers.tail.map(i => "   "+i.toString()).mkString("\
 OnTable ${game.activeGameState.moves.map(_.card).mkString(", ")}
           """        
         println(txt)
-        val cardStr = readLine 
+        val cardStr = readLine() 
         parseCard(cardStr) match {
           case -\/(err) => println(s"Error: $err")
           case \/-(card) => {
