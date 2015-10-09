@@ -5,12 +5,12 @@ import player._
 
 case class CompetitionId(id:Long)
 
-case class Competition(id:CompetitionId, players:Set[Player], kind:MatchKind, deadlineKind:CompetitionStartDeadline/*, FIXME"this functionality needs a timer" endTime:LocalDateTime */)
+case class Competition(players:Set[Player], kind:MatchKind, deadline:CompetitionStartDeadline/*, FIXME"this functionality needs a timer" endTime:LocalDateTime */)
 
 sealed trait MatchKind
 case object SingleMatch extends MatchKind
-case class Tournament(numberOfMatches:Int) extends MatchKind
-case class TargetTournament(winnerPoints:Int) extends MatchKind
+case class NumberOfGamesMatchKind(numberOfMatches:Int) extends MatchKind
+case class TargetPointsMatchKind(winnerPoints:Int) extends MatchKind
 
 sealed trait CompetitionStartDeadline
 
@@ -41,8 +41,12 @@ object CompetitionStartDeadline {
 }
 
 sealed trait CompetitionState extends org.obl.ddd.State
+sealed trait ClientCompetitionState extends CompetitionState {
+  def id:CompetitionId
+  def competition:Competition
+}
 
 case object EmptyCompetition extends CompetitionState  
-case class OpenCompetition(competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends CompetitionState  
-case class DroppedCompetition(competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends CompetitionState  
-case class FullfilledCompetition(competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends CompetitionState  
+case class OpenCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends ClientCompetitionState  
+case class DroppedCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends ClientCompetitionState  
+case class FullfilledCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId], game:Option[GameId]) extends CompetitionState  

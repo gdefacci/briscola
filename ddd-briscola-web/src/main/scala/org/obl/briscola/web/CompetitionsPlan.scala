@@ -7,11 +7,18 @@ import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server._
 import org.obl.briscola.competition._
+import org.obl.briscola.service._
 import scalaz.{ -\/, \/, \/- }
+import org.obl.briscola.web.util.ServletRoutes
 
-trait CompetitionRoutes {
+import jsonEncoders._
+import jsonDecoders._
+import org.obl.briscola.web.util.Plan
+
+trait CompetitionRoutes extends ServletRoutes {
   def Competitions: org.obl.raz.Path
   def CompetitionById: PathCodec.Symmetric[CompetitionId]
+  def PlayerCompetitionById: PathCodec.Symmetric[(CompetitionId, PlayerId)]
   def AcceptCompetition: PathCodec.Symmetric[(CompetitionId, PlayerId)]
   def DeclineCompetition: PathCodec.Symmetric[(CompetitionId, PlayerId)]
   def CreateCompetition: PathCodec.Symmetric[PlayerId]
@@ -31,68 +38,82 @@ trait CompetitionPresentationAdapter {
   def playerRoutes: PlayerRoutes
   def competitionRoutes: CompetitionRoutes
 
+  def apply(comp: CompetitionStartDeadline): Presentation.CompetitionStartDeadline = {
+    comp match {
+      case CompetitionStartDeadline.AllPlayers => Presentation.AllPlayers
+      case CompetitionStartDeadline.OnPlayerCount(n) => Presentation.OnPlayerCount(n)
+    } 
+  }
+  def apply(comp: MatchKind): Presentation.MatchKind = {
+    comp match {
+      case SingleMatch => Presentation.SingleMatch
+      case NumberOfGamesMatchKind(n) => Presentation.NumberOfGamesMatchKind(n)
+      case TargetPointsMatchKind(n) => Presentation.TargetPointsMatchKind(n)
+    }
+  }
   def apply(comp: Competition, pid: Option[PlayerId]): Presentation.Competition = {
     Presentation.Competition(
       comp.players.map(p => playerRoutes.PlayerById(p.id)),
-      comp.kind,
-      comp.deadlineKind)
+      apply(comp.kind),
+      apply(comp.deadline))
   }
   
-  def apply(comp: CompetitionEvent): Presentation.CompetitionEvent = comp match {
-    case CreatedCompetition(issuer, comp) => 
-      Presentation.CreatedCompetition( playerRoutes.PlayerById(issuer.id), competitionRoutes.CompetitionById(comp.id) )
+  def apply(cid:CompetitionId, comp: ClientCompetitionEvent, pid:PlayerId): Presentation.CompetitionEvent = comp match {
+    case CreatedCompetition(id, issuer, comp) => 
+      Presentation.CreatedCompetition( playerRoutes.PlayerById(issuer.id), competitionRoutes.PlayerCompetitionById(id, pid) )
       
-    case ConfirmedCompetition(comp) => 
-      Presentation.ConfirmedCompetition( competitionRoutes.CompetitionById(comp.id) )
+    case CompetitionAccepted(pid) => 
+      Presentation.CompetitionAccepted( playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid) )
       
-    case CompetitionAccepted(pid, cid) => 
-      Presentation.CompetitionAccepted( playerRoutes.PlayerById(pid), competitionRoutes.CompetitionById(cid) )
-      
-    case CompetitionDeclined(pid, cid, rsn) => 
-      Presentation.CompetitionDeclined( playerRoutes.PlayerById(pid), competitionRoutes.CompetitionById(cid), rsn )
+    case CompetitionDeclined(pid, rsn) => 
+      Presentation.CompetitionDeclined( playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid), rsn )
     
   }
   
-  def apply(comp: CompetitionState, pid: Option[PlayerId]): Presentation.CompetitionState = {
+  def apply(comp: ClientCompetitionState, pid: Option[PlayerId]): Presentation.CompetitionState = {
     val (competition, compKind, acceptingPlayers, decliningPlayers) = comp match {
-      case EmptyCompetition => (None, Presentation.CompetitionStateKind.empty, Nil, Nil)
       case c: OpenCompetition => (Some(c.competition), Presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
       case c: DroppedCompetition => (Some(c.competition), Presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
-      case c: FullfilledCompetition => (Some(c.competition), Presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
     }
 
-    val compId = competition.map(_.id)
-
     Presentation.CompetitionState(
-      compId.map(competitionRoutes.CompetitionById(_)),
+      competitionRoutes.CompetitionById(comp.id),
       competition.map(apply(_, pid)),
       compKind,
       acceptingPlayers.map(id => playerRoutes.PlayerById(id)).toSet,
       decliningPlayers.map(id => playerRoutes.PlayerById(id)).toSet,
-      for (plid <- pid; cid <- compId) yield (competitionRoutes.AcceptCompetition(cid, plid)),
-      for (plid <- pid; cid <- compId) yield (competitionRoutes.DeclineCompetition(cid, plid)))
+      for (plid <- pid) yield (competitionRoutes.AcceptCompetition(comp.id, plid)),
+      for (plid <- pid) yield (competitionRoutes.DeclineCompetition(comp.id, plid)))
   }
 
 }
 
-import jsonEncoders._
-import jsonDecoders._
+class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRoutes, service: => CompetitionsService, toPresentation: => CompetitionPresentationAdapter)  extends PlayerRoutesJsonDecoders with Plan {
 
-class CompetitionsPlan(routes: => CompetitionRoutes, _playerRoutes: => PlayerRoutes, service: => CompetitionsService, toPresentation: => CompetitionPresentationAdapter)  extends PlayerRoutesJsonDecoders {
-
+  lazy val routes = _routes
   lazy val playerRoutes = _playerRoutes
   
   import org.obl.raz.http4s.RazHttp4s._
   import org.obl.briscola.web.util.ArgonautEncodeHelper._
   import org.obl.briscola.web.util.ArgonautHttp4sDecodeHelper._
 
+  lazy val onlyClientCompetitionState:PartialFunction[CompetitionState, ClientCompetitionState] = {
+    case cc:ClientCompetitionState => cc
+  }
+  
   lazy val plan = HttpService {
     case GET -> routes.Competitions(_) =>
-      val content = service.allCompetitions.map(toPresentation(_, None))
+      val content = Presentation.Collection(service.allCompetitions.collect(onlyClientCompetitionState).map(toPresentation(_, None)))
       Ok(responseBody(content))
 
     case GET -> routes.CompetitionById(id) =>
-      val content = service.competitionById(id).map(toPresentation(_, None))
+      val content = service.competitionById(id).collect(onlyClientCompetitionState).map(toPresentation(_, None))
+      content match {
+        case None => NotFound()
+        case Some(content) => Ok(responseBody(content))
+      }
+    case GET -> routes.PlayerCompetitionById(id, pid) =>
+      val content = service.competitionById(id).collect(onlyClientCompetitionState).map(toPresentation(_, Some(pid)))
       content match {
         case None => NotFound()
         case Some(content) => Ok(responseBody(content))
@@ -101,19 +122,19 @@ class CompetitionsPlan(routes: => CompetitionRoutes, _playerRoutes: => PlayerRou
     case POST -> routes.AcceptCompetition(id, pid) =>
       service.acceptCompetition(pid, id).map {
         case -\/(err) => InternalServerError(err.toString)
-        case \/-(v) =>
+        case \/-(v:ClientCompetitionState) =>
           val content = toPresentation(v, Some(pid))
           Ok(responseBody(content))
-
+        case _ => NotFound()
       } getOrElse (NotFound())
 
     case POST -> routes.DeclineCompetition(id, pid) =>
       service.declineCompetition(pid, id, None).map {
         case -\/(err) => InternalServerError(err.toString)
-        case \/-(v) =>
+        case \/-(v:ClientCompetitionState) =>
           val content = toPresentation(v, Some(pid))
           Ok(responseBody(content))
-
+        case _ => NotFound()
       } getOrElse (NotFound())
 
       
@@ -122,9 +143,10 @@ class CompetitionsPlan(routes: => CompetitionRoutes, _playerRoutes: => PlayerRou
         errOrComp match {
           case -\/(err) => InternalServerError(err.toString)
           case \/-(comp) => 
-            service.createCompetition(pid, comp.players, comp.kind, comp.deadlineKind) match {
+            service.createCompetition(pid, comp.players.toSet, comp.kind, comp.deadline) match {
               case -\/(err) => InternalServerError(err.toString)
-              case \/-(content) => Ok(responseBody( toPresentation(content, Some(pid)))) 
+              case \/-(content:ClientCompetitionState) => Ok(responseBody( toPresentation(content, Some(pid))))
+              case _ => NotFound()
             }
         }
       } 

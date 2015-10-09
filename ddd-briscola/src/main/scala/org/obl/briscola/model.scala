@@ -43,6 +43,9 @@ case class Deck(cards: Seq[Card]) {
     crds.toSet -> Deck(deck)
   }
   
+  def briscolaCard(numberOfPlayers:Int):Card = 
+    cards.last    
+  
 }
 
 object GameState {
@@ -58,7 +61,7 @@ sealed trait GameState extends State
 case class GameId(id:Long)
 
 case object EmptyGameState extends GameState 
-case class ActiveGameState(id:GameId, gameSeed:Seed.Value, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState]) extends GameState {
+case class ActiveGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState]) extends GameState {
   
   assert(nextPlayers.nonEmpty)
 
@@ -66,12 +69,14 @@ case class ActiveGameState(id:GameId, gameSeed:Seed.Value, deck: Deck, moves: Se
 
   lazy val isLastHandTurn = nextPlayers.length == 1
   
-  lazy val isLastGameTurn = isLastHandTurn && deck.isEmpty
+  lazy val isLastGameTurn = isLastHandTurn && deck.isEmpty && nextPlayers.head.cards.size == 1
   
   lazy val players:Seq[PlayerState] = moves.map(_.player) ++ nextPlayers
   
+  lazy val deckCardsNumber = deck.cards.length
+  
 }
-case class FinalGameState(id:GameId, gameSeed:Seed.Value, players:Seq[PlayerFinalState]) extends GameState {
+case class FinalGameState(id:GameId, briscolaCard:Card, players:Seq[PlayerFinalState]) extends GameState {
   
   lazy val playersOrderByPoints = players.toSeq.sortWith { (ps1, ps2) =>
     ps1.points > ps2.points || (ps1.points == ps2.points && ps1.score.size > ps2.score.size)

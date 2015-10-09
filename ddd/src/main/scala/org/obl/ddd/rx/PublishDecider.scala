@@ -35,4 +35,4 @@ class PublishEvolver[S <: State, E <: Event](evolver:Evolver[S,E]) extends Evolv
   
 }
 
-case class StateChange[S,E](oldState:S, event:E, state:S)
+//case class StateChange[S,E](oldState:S, event:E, state:S)

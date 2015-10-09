@@ -1,4 +1,5 @@
 package org.obl.briscola
+package service
 package impl.simple
 
 import org.obl.briscola._

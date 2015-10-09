@@ -110,6 +110,12 @@ trait Spec[S <: State, C <: Command, E <: Event, Err <: DomainError] {
       }
     }
   }
+  
+  object Expect {
+    def apply(expectation:StateExpectation):S => Assertion = { s =>
+      OnState(s).expect(expectation)
+    }
+  }
 
   object Assertion {
     private class AssertionImpl(val prerequiste: Prerequisite, val expectation: Expectation, val next: Seq[S => Assertion]) extends Assertion {
@@ -185,13 +191,13 @@ trait Spec[S <: State, C <: Command, E <: Event, Err <: DomainError] {
   case object UnsatisfiedPrequisite extends LeafExpectationImpl(DescriptionImpl("unsatisifed prerequisite"), p => false) with ErrorExpectation
 
   case class StateIs(state: S) extends LeafExpectationImpl(DescriptionImpl(s"state $state"), _.map { case (_, s) => s == state } getOrElse false) with StateExpectation
-  case class StateThat(textDescription: String)(predicate: S => Boolean) extends LeafExpectationImpl(DescriptionImpl(s"state that $textDescription"), _.map { case (_, s) => predicate(s) } getOrElse false) with ErrorExpectation
+  case class StateThat(textDescription: String)(predicate: S => Boolean) extends LeafExpectationImpl(DescriptionImpl(s"state that $textDescription"), _.map { case (_, s) => predicate(s) } getOrElse false) with StateExpectation
   case class StateThatIs[S1 <: S](textDescription: String)(predicate: S1 => Boolean)(implicit classTag:reflect.ClassTag[S1]) extends LeafExpectationImpl(
       DescriptionImpl(s"state that $textDescription"), 
       _.map { case (_, s) => s match {
         case s1:S1 => predicate(s1)
         case _ => false
-      } } getOrElse false) with ErrorExpectation
+      } } getOrElse false) with StateExpectation
 
   private case class SuccessfullExpectationImpl(prerequisiteDescription:Description, expectation: Expectation) extends SuccessfullExpectation {
     lazy val expectationDescription = expectation.description

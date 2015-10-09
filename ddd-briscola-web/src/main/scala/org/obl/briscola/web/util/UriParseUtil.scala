@@ -4,7 +4,7 @@ import java.net.URLDecoder
 import org.obl.raz._
 import scala.util.Try
 
-object UriParseUtil extends App {
+object UrlParseUtil extends App {
   private def decodeUrl(str: String) = {
     URLDecoder.decode(str.replace("+", "%2B"), "UTF-8").replace("%2B", "+").trim
   }
@@ -21,6 +21,8 @@ object UriParseUtil extends App {
             case "http" => Some(HTTP(uri.getHost))            
             case "https" if (uri.getPort > 0) => Some(HTTPS(uri.getHost, uri.getPort))
             case "https" => Some(HTTPS(uri.getHost))
+            case "ws" if (uri.getPort > 0) => Some(WS(uri.getHost, uri.getPort))
+            case "ws" => Some(WS(uri.getHost))
             case _ => None
           }
         } else {

@@ -1,4 +1,5 @@
 package org.obl.briscola
+package service
 
 import org.obl.ddd.Event
 

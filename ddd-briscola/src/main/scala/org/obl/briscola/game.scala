@@ -14,18 +14,18 @@ object GameValidator {
     else None
   }
   
-  def checkAllPlayersExists(playerById:PlayerId => Option[Player], players:Set[PlayerId]):PlayerDoesNotExists \/ Set[Player] = {
-    players.foldLeft[PlayerDoesNotExists \/ Set[Player]](\/-(Set.empty)) { (acc, i) =>
+  def checkAllPlayersExists(playerById:PlayerId => Option[Player], players:Set[PlayerId]):PlayersDoNotExist \/ Set[Player] = {
+    players.foldLeft[PlayersDoNotExist \/ Set[Player]](\/-(Set.empty)) { (acc, i) =>
       acc match {
-        case err @ -\/(PlayerDoesNotExists(nonExistingPlayers)) => {
+        case err @ -\/(PlayersDoNotExist(nonExistingPlayers)) => {
           playerById(i) match {
             case Some(p) => err
-            case None => -\/(PlayerDoesNotExists(nonExistingPlayers + i))
+            case None => -\/(PlayersDoNotExist(nonExistingPlayers + i))
           }
         }
         case \/-(players) => playerById(i) match {
           case Some(p) => \/-(players + p)
-          case None => -\/(PlayerDoesNotExists(Set(i)))
+          case None => -\/(PlayersDoNotExist(Set(i)))
         }
       }
     }
@@ -51,13 +51,12 @@ trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, Bri
                 newDeck -> (currPlayers ++ Seq(PlayerState(player.id, cards, Set.empty)))
               }
               
-              \/-(Seq(GameStarted(ActiveGameState(nextId, deck.cards.last.seed, deck, Nil, plyrs))))
+              \/-(Seq(GameStarted(ActiveGameState(nextId, deck.briscolaCard(players.size), deck, Nil, plyrs))))
           }
         }
-           
       }
       case (gm:ActiveGameState, PlayCard(pid, card)) if gm.currentPlayer.id == pid && gm.currentPlayer.cards.contains(card) => {
-        \/-(Seq(CardPlayed(gm.id, pid, card)))
+        \/-(Seq(CardPlayed(pid, card)))
       }
       case (gm:ActiveGameState, PlayCard(pid, card)) if gm.currentPlayer.id == pid && !gm.currentPlayer.cards.contains(card) => {
         -\/(PlayerDoesNotOwnCard(pid, card, gm.currentPlayer.cards))
@@ -113,15 +112,15 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
       case (_, GameStarted(state)) => 
         state
         
-      case (gm @ ActiveGameState(id, gameSeed, deck, moves, nextPlayers), CardPlayed(cardGameId, cardPlayerId, card)) =>
+      case (gm @ ActiveGameState(id, gameSeed, deck, moves, nextPlayers), CardPlayed(cardPlayerId, card)) =>
         val newMoves = gm.moves ++ Seq(Move(gm.currentPlayer.copy(cards = gm.currentPlayer.cards.filter(_ != card)), card))
         if (gm.isLastHandTurn) {
           
-          val (newDeck, newPlayersState) = playHand(newMoves, gm.gameSeed, gm.deck)
+          val (newDeck, newPlayersState) = playHand(newMoves, gm.briscolaCard.seed, gm.deck)
           
           if (gm.isLastGameTurn) {
             val nsts = newPlayersState.map(s => PlayerFinalState(s.id, s.score.toSeq.map(_.points).sum, s.score ))
-            FinalGameState(gm.id, gm.gameSeed, nsts) 
+            FinalGameState(gm.id, gm.briscolaCard, nsts) 
           } else {
             gm.copy(deck = newDeck, moves = Nil, nextPlayers = newPlayersState)
           }

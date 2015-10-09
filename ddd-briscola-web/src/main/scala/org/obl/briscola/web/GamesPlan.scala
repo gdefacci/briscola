@@ -6,8 +6,11 @@ import org.http4s.dsl._
 import org.obl.raz.PathCodec
 import org.obl.briscola.player.PlayerId
 import scalaz.{ -\/, \/, \/- }
+import org.obl.briscola.web.util.ServletRoutes
+import org.obl.briscola.web.util.Plan
+import org.obl.briscola.service._
 
-trait GameRoutes {
+trait GameRoutes extends ServletRoutes {
   def Games: org.obl.raz.Path
   def GameById: PathCodec.Symmetric[GameId]
   def Player: PathCodec.Symmetric[(GameId, PlayerId)]
@@ -33,9 +36,9 @@ trait GamePresentationAdapter {
   def apply(ps: PlayerFinalState): Presentation.PlayerFinalState =
     Presentation.PlayerFinalState(playerRoutes.PlayerById(ps.id), ps.points, ps.score)
 
-  def apply(e: BriscolaEvent): Presentation.BriscolaEvent = e match {
-    case GameStarted(gm) => Presentation.GameStarted(apply(gm, None))
-    case CardPlayed(gid, pid, crd) => Presentation.CardPlayed(
+  def apply(gid:GameId, e: BriscolaEvent, pid:PlayerId): Presentation.BriscolaEvent = e match {
+    case GameStarted(gm) => Presentation.GameStarted(apply(gm, Some(pid)))
+    case CardPlayed(pid, crd) => Presentation.CardPlayed(
       gameRoutes.GameById(gid),
       playerRoutes.PlayerById(pid),
       crd)
@@ -44,12 +47,13 @@ trait GamePresentationAdapter {
   def apply(gm: ActiveGameState, player: Option[PlayerId]): Presentation.ActiveGameState =
     Presentation.ActiveGameState(
       gameRoutes.GameById(gm.id),
-      gm.gameSeed, gm.moves.map(m => Presentation.Move(playerRoutes.PlayerById(m.player.id), m.card)),
+      gm.briscolaCard, gm.moves.map(m => Presentation.Move(playerRoutes.PlayerById(m.player.id), m.card)),
       gm.nextPlayers.map(p => playerRoutes.PlayerById(p.id)),
       playerRoutes.PlayerById(gm.currentPlayer.id),
       gm.isLastHandTurn, gm.isLastGameTurn,
       gm.players.map(p => playerRoutes.PlayerById(p.id)),
-      player.map(pid => gameRoutes.Player(gm.id, pid)))
+      player.map(pid => gameRoutes.Player(gm.id, pid)),
+      gm.deckCardsNumber)
 
   def apply(gm: GameState): Presentation.GameState = apply(gm, None)
 
@@ -59,13 +63,13 @@ trait GamePresentationAdapter {
     case gm: FinalGameState =>
       Presentation.FinalGameState(
         gameRoutes.GameById(gm.id),
-        gm.gameSeed,
+        gm.briscolaCard,
         gm.playersOrderByPoints.map(apply(_)),
         apply(gm.winner))
   }
 }
 
-class GamesPlan(routes: => GameRoutes, service: => BriscolaService, toPresentation: => GamePresentationAdapter) {
+class GamesPlan(_routes: => GameRoutes, service: => BriscolaService, toPresentation: => GamePresentationAdapter) extends Plan {
 
   import org.obl.raz.http4s.RazHttp4s._
   import org.obl.briscola.web.util.ArgonautEncodeHelper._
@@ -73,11 +77,12 @@ class GamesPlan(routes: => GameRoutes, service: => BriscolaService, toPresentati
 
   import jsonEncoders._
   import jsonDecoders._
+  lazy val routes = _routes
 
   lazy val plan = HttpService {
 
     case GET -> routes.Games(_) =>
-      val content = service.allGames.map(toPresentation(_))
+      val content = Presentation.Collection( service.allGames.map(toPresentation(_)) )
       Ok(responseBody(content))
 
     case GET -> routes.GameById(id) =>

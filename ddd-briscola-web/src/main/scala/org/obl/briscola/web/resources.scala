@@ -1,49 +1,73 @@
 package org.obl.briscola.web
 
+import scalaz.{-\/}
 import org.obl.raz._
 import org.obl.raz.PathConverter._
 import org.obl.raz.ext.ResourceHolder
 import org.obl.briscola.player.PlayerId
 import org.obl.briscola.GameId
 import org.obl.briscola.competition.CompetitionId
+import org.obl.raz.ext.BaseResource
+import org.obl.raz.exceptions.PathExpectationException
 
-class Resources(val root:BasePath[BasePosition, SegmentPosition]) extends ResourceHolder {
+object resources {
 
-  val playerIdSegment = Segment.long.map(PlayerId(_)).contramap( (id:PlayerId) => id.id)
+  private[resources] val playerIdSegment = Segment.long.map(PlayerId(_)).contramap((id: PlayerId) => id.id)
+
+  private object WebSockets extends BaseResource("ws") {
+
+    object Players extends BaseResource(prefix :+ "players") {
+
+      lazy val byId = this / playerIdSegment 
+
+    }
+  }
   
-  object Players extends BaseResource("players") {
-    
+  def playerWebSocket(host:PathBase, contextPath:PathSg):PathConverter[PlayerId, PlayerId, String, SegmentPosition, SegmentPosition] = 
+    PathConverter.encodersAt(host,
+      PathConverter.prependEncoders(contextPath, WebSockets.Players.byId.toPathConverter))
+  
+  def playerWebSocketUriTemplate:UriTemplate = WebSockets.Players.byId.toPathConverter.toUriTemplate("playerId")
+  
+  def playerWebSocketPathDecoder(contextPath:PathSg):PathDecoder[PlayerId] =
+    PathDecoder.prepend(contextPath, WebSockets.Players.byId)
+  
+  object Players extends BaseResource {
+
     val byId = this / playerIdSegment
-    val websocketById = byId / "websocket"
-    
+
+    val login = this / "login"
   }
-  
-  object Games extends BaseResource("games") {
-    
-    val gameIdSegment = Segment.long.map(GameId(_)).contramap( (id:GameId) => id.id)
-    
+
+  object Games extends BaseResource {
+
+    private val gameIdSegment = Segment.long.map(GameId(_)).contramap((id: GameId) => id.id)
+
     val byId = this / gameIdSegment
-    
+
     val player = byId / "player" / playerIdSegment
-    
+
   }
-  
-  object Competitions extends BaseResource("competitions") {
-    
-    val competitionIdSegment = Segment.long.map(CompetitionId(_)).contramap( (id:CompetitionId) => id.id)
-    
+
+  object Competitions extends BaseResource {
+
+    private val competitionIdSegment = Segment.long.map(CompetitionId(_)).contramap((id: CompetitionId) => id.id)
+
     val byId = this / competitionIdSegment
-    
-    private val player = byId / "player" / playerIdSegment
-    
+
+    val player = byId / "player" / playerIdSegment
+
     val accept = player / "accept"
-    
+
     val decline = player / "decline"
-    
+
     val create = this / "player" / playerIdSegment
-    
+
   }
 
-  
-
+  object SiteMap extends BaseResource {
+    
+    val players = Players
+    
+  }
 }

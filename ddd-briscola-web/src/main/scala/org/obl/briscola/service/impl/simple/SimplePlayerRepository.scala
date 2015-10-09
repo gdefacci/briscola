@@ -1,4 +1,5 @@
 package org.obl.briscola
+package service
 package impl.simple
 
 import org.obl.ddd._
@@ -11,6 +12,8 @@ class SimplePlayerRepository extends SimpleRepository[PlayerId, Player]() with P
   def newId = PlayerId(counter.incrementAndGet)
 
   def containsName(nm:String) = valuesMap.values.exists(_.name==nm)
+  
+  def byName(nm:String) = valuesMap.values.find( p => p.name == nm)
   
   def all:Iterable[Player] = valuesMap.values
   

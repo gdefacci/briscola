@@ -12,7 +12,7 @@ trait BriscolaSpec extends Spec[GameState, BriscolaCommand, BriscolaEvent, Brisc
   val decider = new GameDecider {
 
     def nextId: GameId = GameId(1)
-    def playerById(playerId: PlayerId) = Some(Player(playerId, playerId.id.toString))
+    def playerById(playerId: PlayerId) = Some(Player(playerId, playerId.id.toString, ""))
 
   }
 

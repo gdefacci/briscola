@@ -1,4 +1,5 @@
 package org.obl.briscola
+package service
 
 import org.obl.briscola._
 import org.obl.ddd.Repository
