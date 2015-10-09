@@ -1,0 +1,21 @@
+{
+  "name": "ddd-briscola-web",
+  "version": "0.1.0",
+  "devDependencies": {
+    "grunt": "0.4.5",
+    "grunt-contrib-clean": "0.6.0",
+    "grunt-contrib-copy": "0.7.0",
+    "grunt-contrib-stylus": "~0.21.0",
+    "grunt-contrib-watch": "0.6.1",
+    "grunt-ts": "5.0.0-beta.5",
+    "stylus": "0.52.4",
+    "jeet": "~6.1.2",
+    
+    "whatwg-fetch":"0.9.0",
+    "es6-promise":"3.0.2",
+    "react": "0.13.3",
+    "rx": "3.1.2",
+    "rx-dom": "6.0.0",
+    "typescript": "1.6.2"
+  }
+}

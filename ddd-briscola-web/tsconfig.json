@@ -1,0 +1,56 @@
+{
+  "options":{
+    "fastCompile":false,
+    "target": "ES5",
+    "jsx": "react",
+    "sourceMap": true,
+    "noImplicitAny": false,
+    "preserveConstEnums": true,
+    "diagnostics": true
+  },
+  "files": [
+    "lib/es6-promise/es6-promise.d.ts",
+    "lib/react/react-addons-global.d.ts",
+    "lib/react/react-global.d.ts",
+    "lib/rx/rx.lite.d.ts",
+    "lib/whatwg-fetch/whatwg-fetch.d.ts",
+
+    "std/Equal.ts",
+    "std/isNull.ts",
+    "std/JsMap.ts",
+    "std/Option.ts",
+    "std/Disj.ts",
+    "std/Ord.ts",
+    "std/Reflect.ts",
+    "std/Semigroup.ts",
+    "std/Tuple.ts",
+    "std/collections/arrayOps.ts",
+    "std/collections/Stream.ts",
+
+    "util/Assert.ts",
+    "util/FetchUtil.ts",
+    "util/PromiseUtil.ts",
+    "util/RxUtil.ts",
+
+    "model/ws.ts",
+    "model/model.ts",
+    "model/input.ts",
+    "model/commands.ts",
+    "model/board.ts",
+
+    "application/ToModel.ts",
+    "application/ToWs.ts",
+    "application/PlayerService.ts",
+    "application/App.ts",
+
+    "view/listeners.ts",
+    "view/cssClasses.ts",
+
+    "view/components/cards.tsx",
+    "view/components/eventsLog.tsx",
+    "view/components/board.tsx",
+    "view/components/Main.tsx"
+
+  ]
+
+}
