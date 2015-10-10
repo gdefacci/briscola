@@ -34,6 +34,9 @@
 
     "model/ws.ts",
     "model/model.ts",
+    "model/player.ts",
+    "model/game.ts",
+    "model/competition.ts",
     "model/input.ts",
     "model/commands.ts",
     "model/board.ts",

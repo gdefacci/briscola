@@ -73,7 +73,7 @@ module.exports = function(grunt) {
         livereload: true
       },
       src: {
-        files: [tsSources, tsxSources, cssSources],
+        files: [tsSources, tsxSources, cssSources, "tsconfig.json"],
         tasks: ['build']
       }
     },
