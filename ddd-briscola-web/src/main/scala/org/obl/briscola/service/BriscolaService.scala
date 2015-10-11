@@ -40,6 +40,7 @@ trait BaseBriscolaService extends BriscolaService {
         case EmptyGameState => ()
         case gm:ActiveGameState => gameRepository.put(gm.id, gm)
         case gm:FinalGameState => gameRepository.put(gm.id, gm)
+        case gm:DroppedGameState => gameRepository.put(gm.id, gm)
       }
       chngs.foreach(changesChannel.onNext(_))
       gm

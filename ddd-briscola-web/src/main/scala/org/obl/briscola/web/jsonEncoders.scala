@@ -10,6 +10,27 @@ import org.obl.briscola.web.util.ArgonautHelper._
 
 object jsonEncoders {
   
+  class KindAdder[E <: Enumeration] {
+    def apply[T <: Presentation.ADT[E]](derived:EncodeJson[T])(implicit enumEncoder:EncodeJson[E#Value]):EncodeJson[T] = {
+      EncodeJson[T] { v =>
+        val j = derived(v)
+        j.obj match {
+          case None => j 
+          case Some(obj) => Json.jObjectAssocList(obj.toList ::: List("kind" -> enumEncoder(v.kind)))
+        }
+      }
+    }
+  }
+  
+  def singletonADTEncoder[E <: Enumeration, T <: Presentation.ADT[E]](implicit enumEncoder:EncodeJson[E#Value]) =
+    EncodeJson[T] { v =>
+      Json.obj("kind" -> enumEncoder(v.kind))
+    }
+  
+  def withKind[E <: Enumeration] = new KindAdder[E]()
+  
+  import EncodeJson.derive
+  
   implicit lazy val pathEncoder = jencode1((p: Path) => p.render)
 
   implicit def collectionEncoder[T](implicit enc:EncodeJson[T]):EncodeJson[Presentation.Collection[T]] =
@@ -27,8 +48,9 @@ object jsonEncoders {
   implicit lazy val playerEventEncoder = {
     
     implicit lazy val playerEventKindEncoder = enumEncoder[Presentation.PlayerEventKind.type]
-    implicit lazy val playerLogOnEncoder = jencode2L( (e:Presentation.PlayerLogOn) => (e.player, e.kind) )("player", "kind")
-    implicit lazy val playerLogOffEncoder = jencode2L( (e:Presentation.PlayerLogOff) => (e.player, e.kind) )("player", "kind")
+    
+    implicit lazy val playerLogOnEncoder = withKind[Presentation.PlayerEventKind.type](derive[Presentation.PlayerLogOn])  
+    implicit lazy val playerLogOffEncoder = withKind[Presentation.PlayerEventKind.type](derive[Presentation.PlayerLogOff])
     
     jencode1((p: Presentation.PlayerEvent) => p match {
       case c:Presentation.PlayerLogOn => playerLogOnEncoder(c)
@@ -50,23 +72,34 @@ object jsonEncoders {
   
   implicit lazy val moveEncoder = EncodeJson.derive[Presentation.Move] 
 
-  implicit lazy val gameStateKindEncoder = enumEncoder[Presentation.GameStateKind.type] 
+  implicit lazy val gameStateKindEncoder = enumEncoder[Presentation.GameStateKind.type]
   
-  implicit lazy val activeGameEncoder = jencode11L((p: Presentation.ActiveGameState) => (
-        p.self, p.briscolaCard, p.moves, p.nextPlayers, p.currentPlayer, p.isLastHandTurn, p.isLastGameTurn, p.players, p.playerState, p.deckCardsNumber, p.kind))(
-        "self", "briscolaCard", "moves", "nextPlayers", "currentPlayer", "isLastHandTurn", "isLastGameTurn", "players", "playerState", "deckCardsNumber", "kind")
+  implicit lazy val dropReasonEncoder = {
+    
+    implicit lazy val dropReasonKindEncoder = enumEncoder[Presentation.DropReasonKind.type]
+    
+    lazy val playerLeftDropReasonEncoder:EncodeJson[Presentation.PlayerLeft] = 
+      withKind[Presentation.DropReasonKind.type]( EncodeJson.derive[Presentation.PlayerLeft] )
+    
+    jencode1((p: Presentation.DropReason) => p match {
+      case gm:Presentation.PlayerLeft => playerLeftDropReasonEncoder(gm)
+    })
+  }
   
-  implicit lazy val gameStateEncoder = {    
-
-    lazy val emptyGameEncoder = jencode1L((p: Presentation.EmptyGameState.type) => p.kind)("kind")
+  implicit lazy val activeGameEncoder = withKind[Presentation.GameStateKind.type](derive[Presentation.ActiveGameState]) 
   
-    lazy val finalGameEncoder = jencode5L((p: Presentation.FinalGameState) => (
-        p.self, p.briscolaCard, p.playersOrderByPoints, p.winner, p.kind))(
-        "self", "briscolaCard", "playersOrderByPoints", "winner", "kind")
+  implicit lazy val gameStateEncoder = {
+    
+    lazy val emptyGameEncoder = singletonADTEncoder[Presentation.GameStateKind.type, Presentation.EmptyGameState.type]
+  
+    lazy val finalGameEncoder = withKind[Presentation.GameStateKind.type](derive[Presentation.FinalGameState]) 
+    
+    lazy val droppedGameEncoder = withKind[Presentation.GameStateKind.type](derive[Presentation.DroppedGameState]) 
         
     jencode1((p: Presentation.GameState) => p match {
       case Presentation.EmptyGameState => emptyGameEncoder(Presentation.EmptyGameState)
       case gm:Presentation.ActiveGameState => activeGameEncoder(gm)
+      case gm:Presentation.DroppedGameState => droppedGameEncoder(gm)
       case gm:Presentation.FinalGameState => finalGameEncoder(gm)
     })    
       
@@ -75,13 +108,14 @@ object jsonEncoders {
   implicit lazy val briscolaEventEncoder = {
     implicit lazy val gameEventKindEncoder = enumEncoder[Presentation.BriscolaEventKind.type]
     
-    implicit lazy val gameStartedEventEncoder = jencode2L( (e:Presentation.GameStarted) => (e.game, e.kind) )("game", "kind")
-    implicit lazy val cardPlayedEncoder = jencode4L((p: Presentation.CardPlayed) => (
-      p.game, p.player, p.card, p.kind))("game", "player", "card", "kind")
+    lazy val gameStartedEventEncoder = withKind[Presentation.BriscolaEventKind.type](derive[Presentation.GameStarted])
+    lazy val cardPlayedEventEncoder = withKind[Presentation.BriscolaEventKind.type](derive[Presentation.CardPlayed]) 
+    lazy val gameDroppedEventEncoder = withKind[Presentation.BriscolaEventKind.type](derive[Presentation.GameDropped]) 
       
     jencode1((p: Presentation.BriscolaEvent) => p match {
       case c:Presentation.GameStarted => gameStartedEventEncoder(c)
-      case c:Presentation.CardPlayed => cardPlayedEncoder(c)
+      case c:Presentation.CardPlayed => cardPlayedEventEncoder(c)
+      case c:Presentation.GameDropped => gameDroppedEventEncoder(c)
     })  
   }
   
@@ -94,11 +128,12 @@ object jsonEncoders {
   
     implicit lazy val matchKindKindEncoder = enumEncoder[Presentation.MatchKindKind.type] 
     
-    lazy val numberOfGamesMatchKindEncoder = jencode2L((p: Presentation.NumberOfGamesMatchKind) => (p.numberOfMatches, p.kind))("numberOfMatches", "kind") 
-    lazy val targetPointsMatchKindEncoder = jencode2L((p: Presentation.TargetPointsMatchKind) => (p.winnerPoints, p.kind))("winnerPoints", "kind") 
+    lazy val singleMatch = singletonADTEncoder[Presentation.MatchKindKind.type, Presentation.SingleMatch.type]
+    lazy val numberOfGamesMatchKindEncoder = withKind[Presentation.MatchKindKind.type](derive[Presentation.NumberOfGamesMatchKind])
+    lazy val targetPointsMatchKindEncoder = withKind[Presentation.MatchKindKind.type](derive[Presentation.TargetPointsMatchKind]) 
     
     jencode1((p: Presentation.MatchKind) => p match {
-      case Presentation.SingleMatch => EncodeJson.StringEncodeJson("single-match")
+      case t @ Presentation.SingleMatch => singleMatch(t)
       case t:Presentation.NumberOfGamesMatchKind => numberOfGamesMatchKindEncoder(t)
       case t:Presentation.TargetPointsMatchKind => targetPointsMatchKindEncoder(t)
     })
@@ -108,10 +143,12 @@ object jsonEncoders {
     
     implicit lazy val competitionStartDeadlineKindEncoder = enumEncoder[Presentation.CompetitionStartDeadlineKind.type]
     
-    lazy val onPlayerCountEncoder = jencode2L((p: Presentation.OnPlayerCount) => (p.count, p.kind) )("count", "kind") 
+    lazy val allPlayers = singletonADTEncoder[Presentation.CompetitionStartDeadlineKind.type, Presentation.AllPlayers.type] 
+    lazy val onPlayerCountEncoder = withKind[Presentation.CompetitionStartDeadlineKind.type](derive[Presentation.OnPlayerCount]) 
+//      jencode2L((p: Presentation.OnPlayerCount) => (p.count, p.kind) )("count", "kind") 
     
     jencode1((p: Presentation.CompetitionStartDeadline) => p match {
-      case Presentation.AllPlayers => EncodeJson.StringEncodeJson("all-players")
+      case t @ Presentation.AllPlayers => allPlayers(t)
       case t:Presentation.OnPlayerCount => onPlayerCountEncoder(t)
     })
   }
@@ -122,20 +159,12 @@ object jsonEncoders {
 
   implicit lazy val competitionEventEncoder = {
     
-    implicit lazy val competitionEventKindEncoder = enumEncoder[Presentation.CompetitionEventKind.type] 
-  
-    lazy val createdCompetitionEncoder = jencode3L((p: Presentation.CreatedCompetition) => (
-        p.issuer, p.competition, p.kind))(
-        "issuer", "competition", "kind")
-  
-    lazy val competitionAcceptedEncoder = jencode3L((p: Presentation.CompetitionAccepted) => (
-        p.player, p.competition, p.kind))(
-        "player", "competition", "kind")
-  
-    lazy val competitionDeclinedEncoder = jencode4L((p: Presentation.CompetitionDeclined) => (
-        p.player, p.competition, p.reason, p.kind))(
-        "player", "competition", "reason", "kind")
-        
+    implicit lazy val competitionEventKindEncoder = enumEncoder[Presentation.CompetitionEventKind.type]
+    
+    lazy val createdCompetitionEncoder = withKind[Presentation.CompetitionEventKind.type](derive[Presentation.CreatedCompetition]) 
+    lazy val competitionAcceptedEncoder = withKind[Presentation.CompetitionEventKind.type](derive[Presentation.CompetitionAccepted])
+    lazy val competitionDeclinedEncoder = withKind[Presentation.CompetitionEventKind.type](derive[Presentation.CompetitionDeclined]) 
+
      jencode1((p: Presentation.CompetitionEvent) => p match {
       case c:Presentation.CreatedCompetition => createdCompetitionEncoder(c)
       case c:Presentation.CompetitionAccepted => competitionAcceptedEncoder(c)
