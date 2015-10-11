@@ -3,17 +3,9 @@ package org.obl.briscola
 import org.obl.ddd._
 import org.obl.briscola.player._
 
-//object Events {
+sealed trait BriscolaEvent extends Event
 
-//  sealed trait PlayerEvent extends Event
-//  case class PlayerCreated(player:Player) extends PlayerEvent
+case class GameStarted(game: ActiveGameState) extends BriscolaEvent
+case class CardPlayed(playerId: PlayerId, card: Card) extends BriscolaEvent
+case class GameDropped(reason:DropReason) extends BriscolaEvent
   
-  sealed trait BriscolaEvent extends Event
-  
-  case class GameStarted(game:ActiveGameState) extends BriscolaEvent
-  case class CardPlayed(playerId:PlayerId, card:Card) extends BriscolaEvent
-  
-//  case class HandFinished(game:ActiveGameState) extends BriscolaEvent
-//  case class GameFinished(gameId:GameId, winner:PlayerFinalState, otherPlayers:Seq[PlayerFinalState]) extends BriscolaEvent
-  
-//}

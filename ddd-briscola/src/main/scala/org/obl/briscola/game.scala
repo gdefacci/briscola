@@ -55,6 +55,9 @@ trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, Bri
           }
         }
       }
+      case (EmptyGameState, _) => {
+        -\/(GameNotStarted)
+      }
       case (gm:ActiveGameState, PlayCard(pid, card)) if gm.currentPlayer.id == pid && gm.currentPlayer.cards.contains(card) => {
         \/-(Seq(CardPlayed(pid, card)))
       }
@@ -67,11 +70,14 @@ trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, Bri
       case (gm:ActiveGameState, PlayCard(pid, _)) if gm.currentPlayer.id != pid => {
         -\/(InvalidTurn(pid, gm.currentPlayer.id))
       }
-      case (EmptyGameState, _) => {
-        -\/(GameNotStarted)
-      }
       case (_:ActiveGameState, StartGame(players)) => {
         -\/(GameAlreadyStarted)
+      }
+      case (_:ActiveGameState, PlayerDropGame(player, reason)) => {
+        \/-(Seq(GameDropped(PlayerLeft(player, reason))))
+      }
+      case (_:DroppedGameState, _) => {
+        -\/(GameAlreadyDropped)
       }
       case (_:FinalGameState, _) => {
         -\/(GameAlreadyFinished)
@@ -112,11 +118,11 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
       case (_, GameStarted(state)) => 
         state
         
-      case (gm @ ActiveGameState(id, gameSeed, deck, moves, nextPlayers), CardPlayed(cardPlayerId, card)) =>
+      case (gm @ ActiveGameState(id, briscolaCard, deck, moves, nextPlayers), CardPlayed(cardPlayerId, card)) =>
         val newMoves = gm.moves ++ Seq(Move(gm.currentPlayer.copy(cards = gm.currentPlayer.cards.filter(_ != card)), card))
         if (gm.isLastHandTurn) {
           
-          val (newDeck, newPlayersState) = playHand(newMoves, gm.briscolaCard.seed, gm.deck)
+          val (newDeck, newPlayersState) = playHand(newMoves, briscolaCard.seed, gm.deck)
           
           if (gm.isLastGameTurn) {
             val nsts = newPlayersState.map(s => PlayerFinalState(s.id, s.score.toSeq.map(_.points).sum, s.score ))
@@ -129,8 +135,11 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
           gm.copy(moves = newMoves, nextPlayers = gm.nextPlayers.tail)
         }
         
+      case (ActiveGameState(id, briscolaCard, deck, moves, nextPlayers), GameDropped(reason))  =>
+        DroppedGameState(id, briscolaCard, deck, moves, nextPlayers, reason)
+        
       case (s, cmd) => 
-        throw new RuntimeException(s"forbidden condition state:${s} event:${event}")
+        throw new RuntimeException(s"forbidden condition state:$s event:$event")
     }
   }
 }

@@ -76,6 +76,12 @@ case class ActiveGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[
   lazy val deckCardsNumber = deck.cards.length
   
 }
+
+sealed trait DropReason
+case class PlayerLeft(player:PlayerId, reason:Option[String]) extends DropReason
+
+case class DroppedGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState], dropReason:DropReason) extends GameState 
+
 case class FinalGameState(id:GameId, briscolaCard:Card, players:Seq[PlayerFinalState]) extends GameState {
   
   lazy val playersOrderByPoints = players.toSeq.sortWith { (ps1, ps2) =>

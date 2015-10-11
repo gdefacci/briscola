@@ -8,7 +8,7 @@ sealed trait BriscolaError extends DomainError
 case object GameNotStarted extends BriscolaError 
 case object GameAlreadyStarted extends BriscolaError 
 case object GameAlreadyFinished extends BriscolaError
-case object GameDropped extends BriscolaError
+case object GameAlreadyDropped extends BriscolaError
 
 case class InvalidTurn(player:PlayerId, currentGamePlayer:PlayerId) extends BriscolaError
 case class TooManyPlayers(players:Set[PlayerId], maxPlayerNumber:Int) extends BriscolaError
