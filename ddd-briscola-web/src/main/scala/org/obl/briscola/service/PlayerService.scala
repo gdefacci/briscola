@@ -3,7 +3,6 @@ package service
 
 import org.obl.briscola.player._
 import org.obl.briscola.competition._
-import org.obl.briscola.web.util.Channels
 import scalaz.{ -\/, \/, \/- }
 import scalaz.stream.Process
 import scalaz.concurrent.Task
@@ -59,7 +58,7 @@ trait BasePlayerService extends PlayerService {
   }
   
   def createPlayer(nm: String, password: String): PlayerError \/ Player =
-    if (playerRepository.containsName(nm)) -\/(PlayerWithSameNameAlredyExists(nm))
+    if (playerRepository.containsName(nm)) -\/(PlayerWithSameNameAlreadyExists(nm))
     else {
       val id = playerRepository.newId
       val encPassword = PasswordHelper.encryptPassword(password)
