@@ -2,6 +2,10 @@ module Model {
 
   import Option = Std.Option
 
+  export enum MatchKindKind {
+    singleMatch, numberOfGamesMatchKind, targetPointsMatchKind
+  }
+  
   export enum CompetitionEventKind {
     createdCompetition, confirmedCompetition, playerAccepted, playerDeclined
   }
@@ -11,7 +15,7 @@ module Model {
   }
 
   export enum CompetitionStartDeadlineKind {
-    onPlayerCount
+    allPlayers, onPlayerCount
   }
 
   export type CompetitionEvent = CompetitionDeclined | CompetitionAccepted | ConfirmedCompetition | CreatedCompetition
@@ -56,8 +60,12 @@ module Model {
     }
   }
 
-  export type CompetitionStartDeadline = string | OnPlayerCount
+  export type CompetitionStartDeadline = AllPlayers | OnPlayerCount
 
+  export interface AllPlayers {
+    kind: CompetitionStartDeadlineKind
+  }
+  
   export interface OnPlayerCount {
     count: number
     kind: CompetitionStartDeadlineKind
@@ -69,8 +77,12 @@ module Model {
     deadline: CompetitionStartDeadline
   }
 
-    export type MatchKind = string | NumberOfGamesMatchKind | TargetPointsMatchKind
+  export type MatchKind = SingleMatch | NumberOfGamesMatchKind | TargetPointsMatchKind
 
+  export interface SingleMatch {
+    kind: MatchKindKind
+  }
+  
   export interface NumberOfGamesMatchKind {
     numberOfMatches: number
     kind: MatchKindKind
@@ -92,7 +104,7 @@ module Model {
         else {
           console.log("unrecognized CompetitionEvent")
           console.log(p)
-          Util.fail<T>("unrecognized CompetitionEvent ")
+          return Util.fail<T>("unrecognized CompetitionEvent ")
         }
       }
     }

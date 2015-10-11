@@ -10,7 +10,7 @@ module Model.Input {
     winnerPoints:number
   }
   
-  export type CompetitionStartDeadline = String | OnPlayerCountDeadline
+  export type CompetitionStartDeadline = string | OnPlayerCountDeadline
 
   export interface OnPlayerCountDeadline {
     count:number

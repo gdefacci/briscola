@@ -1,5 +1,9 @@
 module Model {
 
+  export enum PlayerEventKind {
+    playerLogOn, playerLogOff
+  }
+
   export type PlayerEvent = PlayerLogOn | PlayerLogOff
 
   export class PlayerLogOn extends DomainEvent {
@@ -23,7 +27,7 @@ module Model {
         else {
           console.log("unrecognized PlayerEvent")
           console.log(p)
-          Util.fail<T>("unrecognized PlayerEvent ")
+          return Util.fail<T>("unrecognized PlayerEvent ")
         }
       }
     }

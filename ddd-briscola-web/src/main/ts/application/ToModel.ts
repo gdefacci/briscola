@@ -10,6 +10,8 @@ namespace Application.ToModel {
   import BriscolaEventKind = Model.BriscolaEventKind
   import PlayerEventKind = Model.PlayerEventKind
   import MatchKindKind = Model.MatchKindKind
+  import CompetitionStartDeadlineKind = Model.CompetitionStartDeadlineKind
+  import DropReasonKind = Model.DropReasonKind
   import Seed = Model.Seed
   
   export const siteMapFetch = (url:Path) => Fetch.GET<Model.Ws.SiteMap>(url)
@@ -87,11 +89,23 @@ namespace Application.ToModel {
         score: t[1]
       }
     })
+  
+  const playerLeft: Retrieve<Model.Ws.PlayerLeft, Model.PlayerLeft> = ws => playerFetch(ws.player).then(pl => 
+    new Model.PlayerLeft(pl, Std.option(ws.reason))
+  );
 
+  export const dropReason: Retrieve<Model.Ws.DropReason, Model.DropReason> = ws => {
+    switch (DropReasonKind[ws.kind]) {
+      case DropReasonKind.playerLeft: return playerLeft(<any>ws)  
+      default: return Promise.reject(`unexpected drop reason kind ${ws.kind}`)
+    }
+  }
+  
   export const gameState: Retrieve<Model.Ws.GameState, Model.GameState> = ws => {
     switch (GameStateKind[ws.kind]) {
       case GameStateKind.active: return activeGameState(<any>ws)
       case GameStateKind.finished: return finalGameState(<any>ws)
+      case GameStateKind.dropped: return droppedGameState(<any>ws)
       default: return Promise.reject(`unexpected game state kind ${ws.kind}`)
     }
   }
@@ -106,6 +120,16 @@ namespace Application.ToModel {
       Util.Retrieve.opt(playerStateFetch)(ws.playerState)
     ).then(t => { 
       return new Model.ActiveGameState(ws.self, t[0], t[1], t[2], t[3], ws.isLastHandTurn, ws.isLastGameTurn, t[4], t[5], ws.deckCardsNumber)
+    })
+  
+  export const droppedGameState: Retrieve<Model.Ws.DroppedGameState, Model.DroppedGameState> = ws => 
+    Util.TPromise.all4(
+      card(ws.briscolaCard),
+      Promise.all(ws.moves.map(m => move(m))),
+      Promise.all(ws.nextPlayers.map(purl => playerFetch(purl))),
+      dropReason(ws.dropReason)
+    ).then(t => { 
+      return new Model.DroppedGameState(ws.self, t[0], t[1], t[2], t[3])
     })
 
   
@@ -124,11 +148,18 @@ namespace Application.ToModel {
   const gameStarted: Retrieve<Model.Ws.GameStarted, Model.GameStarted> = ws => activeGameState(ws.game).then(gm => 
     new Model.GameStarted(gm)
   );
+  
+  const gameDropped: Retrieve<Model.Ws.GameDropped, Model.GameDropped> = ws => 
+    Util.TPromise.all2(
+      gameState(ws.game),
+      dropReason(ws.reason)
+    ).then( t => new Model.GameDropped(t[0], t[1]))
 
   export const briscolaEvent: Retrieve<Model.Ws.BriscolaEvent, Model.BriscolaEvent> = ws => {
     switch (BriscolaEventKind[ws.kind]) {
       case BriscolaEventKind.gameStarted: return gameStarted(<any>ws)
       case BriscolaEventKind.cardPlayed: return cardPlayed(<any>ws)
+      case BriscolaEventKind.gameDropped: return gameDropped(<any>ws)
     }
   }
   
@@ -150,25 +181,32 @@ namespace Application.ToModel {
   const numberOfGamesMatchKind: Retrieve<Model.Ws.NumberOfGamesMatchKind, Model.NumberOfGamesMatchKind> = ws =>
     Promise.resolve({ kind: MatchKindKind.numberOfGamesMatchKind, numberOfMatches: ws.numberOfMatches })
 
+
   const targetPointsMatchKind: Retrieve<Model.Ws.TargetPointsMatchKind, Model.TargetPointsMatchKind> = ws =>
     Promise.resolve({ kind: MatchKindKind.targetPointsMatchKind, winnerPoints: ws.winnerPoints })
-
+  
+  const singleMatch: Retrieve<Model.Ws.SingleMatch, Model.SingleMatch> = ws =>
+    Promise.resolve({ kind: MatchKindKind.singleMatch })
+  
   export const matchKind: Retrieve<Model.Ws.MatchKind, Model.MatchKind> = ws => {
-    if (typeof ws === "string") return Promise.resolve(ws)
-    else {
-      switch (MatchKindKind[ws.kind]) {
-        case MatchKindKind.numberOfGamesMatchKind: return numberOfGamesMatchKind(<any>ws)
-        case MatchKindKind.targetPointsMatchKind: return targetPointsMatchKind(<any>ws)
-      }
+    switch (MatchKindKind[ws.kind]) {
+      case MatchKindKind.singleMatch: return singleMatch(<any>ws)
+      case MatchKindKind.numberOfGamesMatchKind: return numberOfGamesMatchKind(<any>ws)
+      case MatchKindKind.targetPointsMatchKind: return targetPointsMatchKind(<any>ws)
     }
   }
 
   const onPlayerCount: Retrieve<Model.Ws.OnPlayerCount, Model.OnPlayerCount> = ws => 
     Promise.resolve({ count: ws.count, kind: Model.CompetitionStartDeadlineKind.onPlayerCount })
 
+   const allPlayers: Retrieve<Model.Ws.AllPlayers, Model.AllPlayers> = ws => 
+    Promise.resolve({ kind: Model.CompetitionStartDeadlineKind.allPlayers })
+  
   export const competitionStartDeadline: Retrieve<Model.Ws.CompetitionStartDeadline, Model.CompetitionStartDeadline> = ws => {
-    if (typeof ws === "string") return Promise.resolve(ws)
-    else return onPlayerCount(<any>ws);
+    switch (ws.kind) {
+      case CompetitionStartDeadlineKind[CompetitionStartDeadlineKind.allPlayers] : return allPlayers(ws);  
+      case CompetitionStartDeadlineKind[CompetitionStartDeadlineKind.onPlayerCount] : return onPlayerCount(<any>ws);  
+    }
   }
 
   export const competition: Retrieve<Model.Ws.Competition, Model.Competition> = ws => 
@@ -220,7 +258,7 @@ namespace Application.ToModel {
   
   export const domainEvent:Retrieve<Model.Ws.DomainEvent, Model.BriscolaEvent | Model.CompetitionEvent | Model.PlayerEvent> = ws => {
     switch (ws.kind) {
-      case BriscolaEventKind[BriscolaEventKind.gameStarted]:  
+      case BriscolaEventKind[BriscolaEventKind.cardPlayed]:  
       case BriscolaEventKind[BriscolaEventKind.gameStarted]:
         return briscolaEvent(<any>ws)  
         

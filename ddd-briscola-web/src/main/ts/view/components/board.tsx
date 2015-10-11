@@ -166,6 +166,8 @@ module View.Components {
             <PlayerCards game={gm} onPlayerDeck={props.onPlayerDeck} onPlayCard={props.onPlayCard}/>
           </section>,
         (gm: Model.FinalGameState) =>
+          <section></section>,
+        (gm: Model.DroppedGameState) =>
           <section></section>
       )(gm)
     }

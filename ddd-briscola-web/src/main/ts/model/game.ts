@@ -3,27 +3,23 @@ module Model {
   import Option = Std.Option
 
   export enum GameStateKind {
-    empty, active, finished
+    empty, active, dropped, finished
   }
 
   export enum BriscolaEventKind {
-    gameStarted, cardPlayed
-  }
-
-  export enum PlayerEventKind {
-    playerLogOn, playerLogOff
-  }
-
-  export enum MatchKindKind {
-    numberOfGamesMatchKind, targetPointsMatchKind
+    gameStarted, cardPlayed, gameDropped
   }
 
   export enum Seed {
     bastoni, coppe, denari, spade
   }
+  
+  export enum DropReasonKind {
+    playerLeft  
+  }
 
-  export type BriscolaEvent = CardPlayed | GameStarted
-
+  export type BriscolaEvent = CardPlayed | GameStarted | GameDropped 
+  
   export class CardPlayed extends DomainEvent {
     constructor(public game: GameState, public player: Player, public card: Card) {
       super(BriscolaEventKind[BriscolaEventKind.cardPlayed])
@@ -35,8 +31,14 @@ module Model {
       super(BriscolaEventKind[BriscolaEventKind.gameStarted])
     }
   }
+  
+  export class GameDropped extends DomainEvent {
+    constructor(public game: GameState, dropReason:DropReason) {
+      super(BriscolaEventKind[BriscolaEventKind.gameDropped])
+    }
+  }
 
-  export type GameState = FinalGameState | ActiveGameState
+  export type GameState = FinalGameState | ActiveGameState | DroppedGameState
 
   export class FinalGameState extends Aggregate {
     constructor(
@@ -46,7 +48,6 @@ module Model {
       public winner: PlayerFinalState) {
       super()
     }
-    aggregateName = "FinalGameState"
   }
 
   export class ActiveGameState extends Aggregate {
@@ -64,6 +65,27 @@ module Model {
       super()
     }
   }
+  
+  export class DropReason {
+  }
+  
+  export class PlayerLeft extends DropReason {
+    constructor(public player:Player, reason:Option<string>) {
+      super();
+    }
+  }
+  
+  export class DroppedGameState extends Aggregate {
+    constructor(
+      public self: Ws.Path,
+      public briscolaCard: Card,
+      public moves: Move[],
+      public nextPlayers: Player[],
+      public dropReason:DropReason) {
+      super()
+    }
+  }
+
 
   export interface Card {
     seed: Seed
@@ -98,7 +120,7 @@ module Model {
         else {
           console.log("unrecognized BriscolaEvent")
           console.log(p)
-          Util.fail<T>("unrecognized BriscolaEvent ")
+          return Util.fail<T>("unrecognized BriscolaEvent ")
         }
       }
     }
@@ -106,14 +128,17 @@ module Model {
 
   export module GameState {
     export function fold<T>(
-      activeGameState: (p: ActiveGameState) => T, finalGameState: (p: FinalGameState) => T): (p: GameState) => T {
+      activeGameState: (p:ActiveGameState) => T, 
+      finalGameState: (p:FinalGameState) => T,
+      droppedGameState: (p:DroppedGameState) => T ): (p: GameState) => T {
       return p => {
         if (p instanceof ActiveGameState) return activeGameState(p)
         else if (p instanceof FinalGameState) return finalGameState(p)
+        else if (p instanceof DroppedGameState) return droppedGameState(p)
         else {
           console.log("unrecognized GameState")
           console.log(p)
-          Util.fail<T>("unrecognized GameState ")
+          return Util.fail<T>("unrecognized GameState ")
         }
       }
     }
