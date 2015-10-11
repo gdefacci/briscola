@@ -14,7 +14,7 @@ object resources {
 
   private[resources] val playerIdSegment = Segment.long.map(PlayerId(_)).contramap((id: PlayerId) => id.id)
 
-  private object WebSockets extends BaseResource("ws") {
+  object WebSockets extends BaseResource("ws") {
 
     object Players extends BaseResource(prefix :+ "players") {
 
@@ -22,15 +22,6 @@ object resources {
 
     }
   }
-  
-  def playerWebSocket(host:PathBase, contextPath:PathSg):PathConverter[PlayerId, PlayerId, String, SegmentPosition, SegmentPosition] = 
-    PathConverter.encodersAt(host,
-      PathConverter.prependEncoders(contextPath, WebSockets.Players.byId.toPathConverter))
-  
-  def playerWebSocketUriTemplate:UriTemplate = WebSockets.Players.byId.toPathConverter.toUriTemplate("playerId")
-  
-  def playerWebSocketPathDecoder(contextPath:PathSg):PathDecoder[PlayerId] =
-    PathDecoder.prepend(contextPath, WebSockets.Players.byId)
   
   object Players extends BaseResource {
 

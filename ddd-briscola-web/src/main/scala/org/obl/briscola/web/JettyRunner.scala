@@ -24,7 +24,7 @@ object JettyRunner extends App {
   val webApp = new BriscolaWebApp(routes, app)
 
   class ConcretePlayerWebSocketEndPoint extends PlayerWebSocketEndPoint(routesConfig.contextPath,
-    routes.playerRoutes,
+    routes.webSocketRoutes,
     app.playerService,
     app.gameService,
     app.competitionService,
@@ -33,7 +33,7 @@ object JettyRunner extends App {
     new CompetitionsStateChangeFilter(app.competitionService, webApp.competitionPresentationAdapter))
 
   def configureWerbSockets(container: ServerContainer) = {
-    container.addWebSocketEndPoint[ConcretePlayerWebSocketEndPoint](routes.playerRoutes.playerWebSocketUriTemplate)
+    container.addWebSocketEndPoint[ConcretePlayerWebSocketEndPoint](routes.webSocketRoutes.playerByIdUriTemplate)
   }
 
   def configureWeb(context: ServletContextHandler) = {

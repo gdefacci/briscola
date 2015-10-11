@@ -22,6 +22,10 @@ import org.obl.briscola.web.Presentation.EventAndState
 import StateChangeFilter._
 import org.obl.briscola.service._
 import org.obl.briscola.service.player.PlayerEvent
+import org.obl.briscola.web.util.Plan
+import org.obl.briscola.web.util.ServletRoutes
+import org.obl.raz.RelativePath
+import org.obl.raz.PathSg
 
 class SessionWrapper(session:Session) {
   
@@ -38,7 +42,7 @@ class SessionWrapper(session:Session) {
   
 }
 
-class PlayerWebSocketEndPoint(contextPath: PathSg, playerRoutes: => PlayerRoutes,
+class PlayerWebSocketEndPoint(contextPath: PathSg, webSocketRoutes: => WebSocketRoutes,
     playerService: => PlayerService,
     gameService: => BriscolaService,
     competitionService: => CompetitionsService,
@@ -49,8 +53,6 @@ class PlayerWebSocketEndPoint(contextPath: PathSg, playerRoutes: => PlayerRoutes
 
   import jsonEncoders._
 
-  val PlayerById = resources.playerWebSocketPathDecoder(contextPath)
-
   override def onOpen(session: Session, config: EndpointConfig) = {
     println("-" * 80)
     println("Openign websocket "+session.getRequestURI.toString())
@@ -58,14 +60,14 @@ class PlayerWebSocketEndPoint(contextPath: PathSg, playerRoutes: => PlayerRoutes
     val sw = new SessionWrapper(session)
     UrlParseUtil.parseUrl(session.getRequestURI.toString()).map { url =>
       url match {
-        case PlayerById(pid) =>
+        case webSocketRoutes.PlayerById(pid) =>
           sw.receiveFrom(gameService.changes.collect(gameStateChangeFilter(pid)))
           sw.receiveFrom(competitionService.changes.collect(competitionStateChangeFilter(pid)))
           sw.receiveFrom(playerService.changes.collect(playerStateChangeFilter(pid)))
           
         case x => {
           println("*" * 80)
-          println(playerRoutes.PlayerWebSocket.toUriTemplate("var").render)
+          println(webSocketRoutes.PlayerById.toUriTemplate("var").render)
           println(s"unmatched websocket uri, uri:$x")
         }
       }

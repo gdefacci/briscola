@@ -15,6 +15,7 @@ trait AppRoutes {
   def gameRoutes:GameRoutes
   def competitionRoutes:CompetitionRoutes
   def siteMapRoutes:SiteMapRoutes
+  def webSocketRoutes:WebSocketRoutes
 }
 
 object AppRoutesImpl {
@@ -35,7 +36,7 @@ trait RoutesConfig {
   def gameServletPath:PathSg
   def competitionServletPath:PathSg
   def siteMapServletPath:PathSg
-
+  
 }
 
 class AppRoutesImpl(val config:RoutesConfig) extends AppRoutes {
@@ -45,26 +46,33 @@ class AppRoutesImpl(val config:RoutesConfig) extends AppRoutes {
     val contextPath:PathSg = config.contextPath
   }
   
+  val webSocketRoutes = new WebSocketRoutes with BaseRoutes {
+    val servletPath = PathSg(Nil) // FIXME move in config
+    
+    private val playerById = resources.WebSockets.Players.byId
+    
+    val PlayerById              = playerById.toPathConverter.encodersWrap.decoderWrap
+    val playerByIdUriTemplate   = playerById.toUriTemplate("playerId")
+  }
+  
   val playerRoutes = new PlayerRoutes with BaseRoutes {
     val servletPath = config.playerServletPath
     
-    val Players                      = resources.Players.encodersWrap
-    val PlayerLogin                  = resources.Players.login.encodersWrap
-    val PlayerById                   = resources.Players.byId.toPathCodec.encodersWrap
-    val PlayerWebSocket              = resources.playerWebSocket(host, contextPath)
-    val playerWebSocketUriTemplate   = resources.playerWebSocketUriTemplate
+    val Players                 = resources.Players.encodersWrap
+    val PlayerLogin             = resources.Players.login.encodersWrap
+    val PlayerById              = resources.Players.byId.toPathCodec.encodersWrap
   }
   
   val gameRoutes = new GameRoutes with BaseRoutes {
     val servletPath     = config.gameServletPath
     
-    val Games           = resources.Games.encodersWrap
-    val GameById        = resources.Games.byId.toPathCodec.encodersWrap
-    val Player          = resources.Games.player.toPathCodec.encodersWrap
+    val Games                   = resources.Games.encodersWrap
+    val GameById                = resources.Games.byId.toPathCodec.encodersWrap
+    val Player                  = resources.Games.player.toPathCodec.encodersWrap
   }
   
   val competitionRoutes = new CompetitionRoutes with BaseRoutes {
-    val servletPath         = config.competitionServletPath
+    val servletPath             = config.competitionServletPath
     
     val Competitions            = resources.Competitions.encodersWrap
     val CompetitionById         = resources.Competitions.byId.toPathCodec.encodersWrap
@@ -75,8 +83,8 @@ class AppRoutesImpl(val config:RoutesConfig) extends AppRoutes {
   }
  
   val siteMapRoutes = new SiteMapRoutes with BaseRoutes {
-    val servletPath         = config.siteMapServletPath
+    val servletPath             = config.siteMapServletPath
     
-    val SiteMap             = resources.SiteMap.encodersWrap
+    val SiteMap                 = resources.SiteMap.encodersWrap
   }
 }

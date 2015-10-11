@@ -45,8 +45,8 @@ trait ServletRoutes {
   }
   
   implicit class PathConverterWrapper[D,E,UT,P <: PathPosition, S <: PathPosition](converter:PathConverter[D,E,UT,P,S]) {
-    def decoderWrap:PathDecoder[D] =
-      PathDecoder.prepend(servletPrefix, converter)
+    def decoderWrap:PathConverter[D,E,UT,P,S] =
+      PathConverter[D,E,UT,P,S](PathDecoder.prepend(servletPrefix, converter), converter, converter)
     
     def encodersWrap = 
       PathConverter.encodersAt(host, PathConverter.prependEncoders(servletPrefix, converter))

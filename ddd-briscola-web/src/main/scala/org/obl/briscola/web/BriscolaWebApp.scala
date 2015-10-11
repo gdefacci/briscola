@@ -7,7 +7,7 @@ import org.obl.briscola.service.BriscolaApp
 
 class BriscolaWebApp(routes:AppRoutes, app:BriscolaApp) extends App {
   
-  lazy val playerPresentationAdapter = PlayerPresentationAdapter (routes.playerRoutes, routes.competitionRoutes)
+  lazy val playerPresentationAdapter = PlayerPresentationAdapter (routes.playerRoutes, routes.webSocketRoutes, routes.competitionRoutes)
   
   lazy val gamePresentationAdapter = GamePresentationAdapter(routes.gameRoutes, routes.playerRoutes)
   

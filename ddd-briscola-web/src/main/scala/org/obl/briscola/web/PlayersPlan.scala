@@ -29,26 +29,33 @@ import org.obl.briscola.competition.ClientCompetitionState
 import org.obl.briscola.competition.ClientCompetitionEvent
 import org.obl.briscola.service._
 import org.obl.briscola.service.player._
+import org.obl.raz.PathDecoder
 
+trait WebSocketRoutes extends ServletRoutes {
+  def PlayerById: PathConverter[PlayerId, PlayerId, String, SegmentPosition, SegmentPosition]
+//  def PlayerByIdDecoder: PathDecoder[PlayerId]
+  def playerByIdUriTemplate: UriTemplate
+}
 
 trait PlayerRoutes extends ServletRoutes {
   def Players: org.obl.raz.Path
   def PlayerLogin: org.obl.raz.Path
   def PlayerById: PathCodec.Symmetric[PlayerId]
-  def PlayerWebSocket: PathConverter[PlayerId, PlayerId, String, _, _]
-
-  def playerWebSocketUriTemplate: UriTemplate
+//  def PlayerWebSocket: PathConverter[PlayerId, PlayerId, String, _, _]
+//
+//  def playerWebSocketUriTemplate: UriTemplate
 }
 
 trait PlayerPresentationAdapter {
   def routes: PlayerRoutes
+  def webSocketRoutes: WebSocketRoutes
   def competitionRoutes: CompetitionRoutes
 
   def apply(pls: Iterable[Player]): Iterable[Presentation.Player] =
     pls.map(apply(_))
 
   def apply(pl: Player) = Presentation.Player(routes.PlayerById(pl.id), pl.name,
-    RazWsHelper.asWebSocket(routes.PlayerWebSocket(pl.id)),
+    RazWsHelper.asWebSocket(webSocketRoutes.PlayerById(pl.id)),
     competitionRoutes.CreateCompetition(pl.id))
 
   def apply(pe: player.PlayerEvent): Presentation.PlayerEvent = pe match {
@@ -58,10 +65,11 @@ trait PlayerPresentationAdapter {
 }
 
 object PlayerPresentationAdapter {
-  def apply(proutes: => PlayerRoutes, pcompetitionRoutes: => CompetitionRoutes) = {
+  def apply(proutes: => PlayerRoutes, wsRoutes: => WebSocketRoutes, pcompetitionRoutes: => CompetitionRoutes) = {
     new PlayerPresentationAdapter {
       lazy val routes = proutes
       lazy val competitionRoutes = pcompetitionRoutes
+      lazy val webSocketRoutes: WebSocketRoutes = wsRoutes
     }
   }
 }
@@ -116,7 +124,7 @@ class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
             }
 
         }
-      }  
+      }
 
     case GET -> routes.PlayerById(id) =>
       service.playerById(id).map((p: Player) => toPresentation(p)) match {
@@ -124,38 +132,38 @@ class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
         case None => NotFound()
       }
 
-//    case GET -> routes.PlayerWebSocket(pid) => /* this is actuallly unused */
-//      val src = scalaz.stream.async.unboundedQueue[WebSocketFrame]
-//      val output = scalaz.stream.async.unboundedQueue[WebSocketFrame]
-//
-//      service.playersChannels(pid).map { pch =>
-//        pch.competions.collect {
-//          case (e:ClientCompetitionEvent, s:ClientCompetitionState) => e -> s
-//        }.subscribe { (evComp) =>
-//          val (event, state) = evComp
-//          val resp = WebsocketBits.Text(responseBody(EventAndState(competitionToPresentation(state.id, event, pid), competitionToPresentation(state, Some(pid)))))
-//          src.enqueueOne(resp).run
-//        }
-//        pch.games.subscribe { (evGm) =>
-//          val (event, state) = evGm
-//          val id = state match {
-//            case EmptyGameState => None
-//            case gm:ActiveGameState => Some(gm.id)
-//            case gm:FinalGameState => Some(gm.id)
-//          }
-//          id.foreach { id =>
-//            val resp = WebsocketBits.Text(responseBody(EventAndState(gameToPresentation(id, event, pid), gameToPresentation(state, Some(pid)))))
-//            src.enqueueOne(resp).run                
-//          }
-//        }
-//        pch.players.subscribe { (evPl) =>
-//          val (event, state) = evPl
-//          val resp = WebsocketBits.Text(responseBody(EventAndState(toPresentation(event), toPresentation(state))))
-//          src.enqueueOne(resp).run
-//        }
-//        WS(Exchange(src.dequeue, output.enqueue))
-//      }.getOrElse(NotFound())
+    //    case GET -> routes.PlayerWebSocket(pid) => /* this is actuallly unused */
+    //      val src = scalaz.stream.async.unboundedQueue[WebSocketFrame]
+    //      val output = scalaz.stream.async.unboundedQueue[WebSocketFrame]
+    //
+    //      service.playersChannels(pid).map { pch =>
+    //        pch.competions.collect {
+    //          case (e:ClientCompetitionEvent, s:ClientCompetitionState) => e -> s
+    //        }.subscribe { (evComp) =>
+    //          val (event, state) = evComp
+    //          val resp = WebsocketBits.Text(responseBody(EventAndState(competitionToPresentation(state.id, event, pid), competitionToPresentation(state, Some(pid)))))
+    //          src.enqueueOne(resp).run
+    //        }
+    //        pch.games.subscribe { (evGm) =>
+    //          val (event, state) = evGm
+    //          val id = state match {
+    //            case EmptyGameState => None
+    //            case gm:ActiveGameState => Some(gm.id)
+    //            case gm:FinalGameState => Some(gm.id)
+    //          }
+    //          id.foreach { id =>
+    //            val resp = WebsocketBits.Text(responseBody(EventAndState(gameToPresentation(id, event, pid), gameToPresentation(state, Some(pid)))))
+    //            src.enqueueOne(resp).run                
+    //          }
+    //        }
+    //        pch.players.subscribe { (evPl) =>
+    //          val (event, state) = evPl
+    //          val resp = WebsocketBits.Text(responseBody(EventAndState(toPresentation(event), toPresentation(state))))
+    //          src.enqueueOne(resp).run
+    //        }
+    //        WS(Exchange(src.dequeue, output.enqueue))
+    //      }.getOrElse(NotFound())
 
-   }
+  }
 
 }
