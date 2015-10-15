@@ -5,7 +5,7 @@ import org.obl.ddd._
 import org.obl.ddd.spec._
 import org.obl.briscola.player._
 
-object Spec1 extends App with BriscolaSpec {
+object GameSpec1 extends App with BriscolaSpec {
 
   val reporter = new PrintlnReporter[GameState, BriscolaEvent, BriscolaError]
 
