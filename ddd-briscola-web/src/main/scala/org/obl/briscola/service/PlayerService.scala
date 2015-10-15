@@ -75,4 +75,3 @@ trait BasePlayerService extends PlayerService {
   def allPlayers: Iterable[Player] = playerRepository.all
 
 }
-

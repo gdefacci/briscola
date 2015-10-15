@@ -17,7 +17,8 @@ object Config {
         new SimpleEventStore[Event](),
         new SimpleGameRepository(),
         new SimplePlayerRepository(),
-        new SimpleCompetitionRepository()
+        new SimpleCompetitionRepository(),
+        new SimpleTournamentRepository()
     )
   }
   

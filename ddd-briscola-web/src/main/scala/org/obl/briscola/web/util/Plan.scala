@@ -12,48 +12,61 @@ import org.obl.raz.PathDecoder
 
 trait Plan {
 
-  def routes:ServletRoutes
-  def plan:HttpService
+  def routes: ServletRoutes
+  def plan: HttpService
 
-  def servletPath:PathSg = routes.servletPath
+  def servletPath: PathSg = routes.servletPath
 }
 
-trait ServletRoutes {
-  
-  def host:PathBase
-  def contextPath:PathSg
-  def servletPath:PathSg
-  
-  private[ServletRoutes] def servletPrefix = PathSg(contextPath.path ++ servletPath.path)
-  
-  implicit class PathWrapper(p:Path) {
-    def decoderWrap:PathDecoder[Path] =
-      Path(Path.baseOf(p), servletPrefix.add(p.path), p.params, p.fragment)
-    
+trait PrefixedRoutes {
+
+  def host: PathBase
+  protected def prefix:PathSg
+
+  implicit class PathWrapper(p: Path) {
+    def decoderWrap: PathDecoder[Path] =
+      Path(Path.baseOf(p), prefix.add(p.path), p.params, p.fragment)
+
     def encodersWrap = {
       val p1 = Path(Some(host), p.path, p.params, p.fragment)
-      Path.renderPrepend(servletPrefix, p1)
+      Path.renderPrepend(prefix, p1)
     }
   }
-  
-  implicit class PathCodecWrapper[D,E](codec:PathCodec[D,E]) {
-    def decoderWrap:PathDecoder[D] =
-      PathDecoder.prepend(servletPrefix, codec)
-    
-    def encodersWrap = 
-      PathCodec.encoderAt(host, PathCodec.prependEncoder(servletPrefix, codec))
+
+  implicit class PathCodecWrapper[D, E](codec: PathCodec[D, E]) {
+    def decoderWrap: PathDecoder[D] =
+      PathDecoder.prepend(prefix, codec)
+
+    def encodersWrap =
+      PathCodec.encoderAt(host, PathCodec.prependEncoder(prefix, codec))
   }
-  
-  implicit class PathConverterWrapper[D,E,UT,P <: PathPosition, S <: PathPosition](converter:PathConverter[D,E,UT,P,S]) {
-    def decoderWrap:PathConverter[D,E,UT,P,S] =
-      PathConverter[D,E,UT,P,S](PathDecoder.prepend(servletPrefix, converter), converter, converter)
-    
-    def encodersWrap = 
-      PathConverter.encodersAt(host, PathConverter.prependEncoders(servletPrefix, converter))
-      
+
+  implicit class PathConverterWrapper[D, E, UT, P <: PathPosition, S <: PathPosition](converter: PathConverter[D, E, UT, P, S]) {
+    def decoderWrap: PathConverter[D, E, UT, P, S] =
+      PathConverter[D, E, UT, P, S](PathDecoder.prepend(prefix, converter), converter, converter)
+
+    def encodersWrap =
+      PathConverter.encodersAt(host, PathConverter.prependEncoders(prefix, converter))
+
   }
-  
-  
-  
-  
+
+}
+
+trait ServletRoutes extends PrefixedRoutes {
+
+  def host: PathBase
+  def contextPath: PathSg
+  def servletPath: PathSg
+
+  protected def prefix = PathSg(contextPath.path ++ servletPath.path)
+
+}
+
+trait WebSocketRoutes extends PrefixedRoutes {
+
+  def host: PathBase
+  def contextPath: PathSg
+
+  protected def prefix = PathSg(contextPath.path)
+
 }

@@ -22,6 +22,7 @@ import org.obl.raz.SegmentPosition
 import org.obl.raz.BasePosition
 import org.obl.raz.PathPosition
 import org.obl.briscola.web.util.ServletRoutes
+import org.obl.briscola.web.util.WebSocketRoutes
 import org.obl.briscola.web.util.Plan
 import org.obl.raz.UriTemplate
 import argonaut.EncodeJson
@@ -31,7 +32,7 @@ import org.obl.briscola.service._
 import org.obl.briscola.service.player._
 import org.obl.raz.PathDecoder
 
-trait WebSocketRoutes extends ServletRoutes {
+trait PlayerWebSocketRoutes extends WebSocketRoutes {
   def PlayerById: PathConverter[PlayerId, PlayerId, String, SegmentPosition, SegmentPosition]
 //  def PlayerByIdDecoder: PathDecoder[PlayerId]
   def playerByIdUriTemplate: UriTemplate
@@ -48,14 +49,14 @@ trait PlayerRoutes extends ServletRoutes {
 
 trait PlayerPresentationAdapter {
   def routes: PlayerRoutes
-  def webSocketRoutes: WebSocketRoutes
+  def playerWebSocketRoutes: PlayerWebSocketRoutes
   def competitionRoutes: CompetitionRoutes
 
   def apply(pls: Iterable[Player]): Iterable[Presentation.Player] =
     pls.map(apply(_))
 
   def apply(pl: Player) = Presentation.Player(routes.PlayerById(pl.id), pl.name,
-    RazWsHelper.asWebSocket(webSocketRoutes.PlayerById(pl.id)),
+    RazWsHelper.asWebSocket(playerWebSocketRoutes.PlayerById(pl.id)),
     competitionRoutes.CreateCompetition(pl.id))
 
   def apply(pe: player.PlayerEvent): Presentation.PlayerEvent = pe match {
@@ -65,11 +66,11 @@ trait PlayerPresentationAdapter {
 }
 
 object PlayerPresentationAdapter {
-  def apply(proutes: => PlayerRoutes, wsRoutes: => WebSocketRoutes, pcompetitionRoutes: => CompetitionRoutes) = {
+  def apply(proutes: => PlayerRoutes, wsRoutes: => PlayerWebSocketRoutes, pcompetitionRoutes: => CompetitionRoutes) = {
     new PlayerPresentationAdapter {
       lazy val routes = proutes
       lazy val competitionRoutes = pcompetitionRoutes
-      lazy val webSocketRoutes: WebSocketRoutes = wsRoutes
+      lazy val playerWebSocketRoutes: PlayerWebSocketRoutes = wsRoutes
     }
   }
 }

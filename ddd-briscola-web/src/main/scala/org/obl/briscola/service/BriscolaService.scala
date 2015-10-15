@@ -3,67 +3,61 @@ package service
 
 import rx.lang.scala.subjects.ReplaySubject
 import rx.lang.scala.Observable
-
 import org.obl.ddd._
 import org.obl.briscola._
 import org.obl.briscola.player._
 import org.obl.briscola.competition._
-import scalaz.{-\/, \/, \/-}
+import scalaz.{ -\/, \/, \/- }
 import scalaz.stream.Process
 import scalaz.concurrent.Task
 import org.obl.ddd.StateChange
+import org.obl.briscola.web.util.TStateChange
 
-trait BriscolaService  {
-  def startGame(players:Set[PlayerId]):BriscolaError \/ GameState  
-  def playCard(id:GameId, pid:PlayerId, card:Card):Option[(BriscolaError \/ GameState)]
+trait BriscolaService {
+  def startGame(players: Set[PlayerId]): BriscolaError \/ GameState
+  def playCard(id: GameId, pid: PlayerId, card: Card): Option[(BriscolaError \/ GameState)]
+
+  def gameById(id: GameId): Option[GameState]
+  def allGames: Iterable[GameState]
+
+  def changes: Observable[StateChange[GameState, BriscolaEvent]]
+
+  def isFinished(gameId: GameId): Boolean
   
-  def gameById(id:GameId):Option[GameState]
-  def allGames:Iterable[GameState] 
-  
-  def changes:Observable[StateChange[GameState, BriscolaEvent]]
-  
-  def isFinished(gameId:GameId):Boolean
+  def finishedGames:Observable[TStateChange[ActiveGameState, BriscolaEvent, FinalGameState]]
+  def droppedGames:Observable[TStateChange[ActiveGameState, BriscolaEvent, DroppedGameState]] 
 }
 
-trait BaseBriscolaService extends BriscolaService {
+trait BaseBriscolaService extends BaseAggregateService[GameId, GameState, BriscolaCommand, BriscolaEvent, BriscolaError] with BriscolaService {
 
-  protected def gameRepository:GameRepository
-  
-  protected def gameRunner:(GameState,BriscolaCommand) => BriscolaError \/ Seq[StateChange[GameState, BriscolaEvent]]
-  
-  private lazy val changesChannel = ReplaySubject[StateChange[GameState, BriscolaEvent]]
-  
-  private def runCommand(st:GameState, cmd:BriscolaCommand):BriscolaError \/ GameState = {
-    gameRunner(st, cmd).map { chngs =>
-      val gm = chngs.last.state
-      gm match {
-        case EmptyGameState => ()
-        case gm:ActiveGameState => gameRepository.put(gm.id, gm)
-        case gm:FinalGameState => gameRepository.put(gm.id, gm)
-        case gm:DroppedGameState => gameRepository.put(gm.id, gm)
-      }
-      chngs.foreach(changesChannel.onNext(_))
-      gm
-    }
-  }
-  
-  def isFinished(gameId:GameId):Boolean = gameRepository.get(gameId) match {
-    case Some(FinalGameState(_,_,_)) => true
+  protected def repository: GameRepository
+
+  def aggregateId(gm: GameState) = GameState.id(gm)
+
+  def isFinished(gameId: GameId): Boolean = repository.get(gameId) match {
+    case Some(FinalGameState(_, _, _)) => true
     case _ => false
   }
-  
-  def changes:Observable[StateChange[GameState, BriscolaEvent]] = changesChannel
-  
-  def startGame(players:Set[PlayerId]):BriscolaError \/ GameState = 
+
+  def startGame(players: Set[PlayerId]): BriscolaError \/ GameState =
     runCommand(EmptyGameState, StartGame(players))
-  
-  def playCard(id:GameId, pid:PlayerId, card:Card):Option[(BriscolaError \/ GameState)] = 
-    gameRepository.get(id).map { gs =>
+
+  def playCard(id: GameId, pid: PlayerId, card: Card): Option[(BriscolaError \/ GameState)] =
+    repository.get(id).map { gs =>
       runCommand(gs, PlayCard(pid, card))
     }
+
+  def allGames: Iterable[GameState] = repository.all
+
+  def gameById(id: GameId): Option[GameState] = repository.get(id)
+
+  lazy val finishedGames:Observable[TStateChange[ActiveGameState, BriscolaEvent, FinalGameState]] =
+    changes.collect {
+      case StateChange(sa @ ActiveGameState(id1,_,_,_,_),e, sb @ FinalGameState(_,_,_)) => TStateChange(sa,e,sb)
+    }
   
-  def allGames:Iterable[GameState] = gameRepository.all
-  
-  def gameById(id:GameId):Option[GameState] = gameRepository.get(id)
-  
+  lazy val droppedGames:Observable[TStateChange[ActiveGameState, BriscolaEvent, DroppedGameState]] =
+    changes.collect {
+      case StateChange(sa @ ActiveGameState(id1,_,_,_,_),e, sb @ DroppedGameState(_,_,_,_,_,_)) => TStateChange(sa,e,sb)
+    }
 }

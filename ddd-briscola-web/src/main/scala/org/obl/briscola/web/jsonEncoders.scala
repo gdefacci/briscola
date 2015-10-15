@@ -63,7 +63,7 @@ object jsonEncoders {
       
   implicit lazy val cardEncoder = {
     implicit val byteEnc = EncodeJson.IntEncodeJson.contramap((b:Byte) => b.toInt)
-    EncodeJson.derive[Card]
+    EncodeJson.derive[Presentation.Card]
   }
   
   implicit lazy val playerStateEncoder = EncodeJson.derive[Presentation.PlayerState]

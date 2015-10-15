@@ -1,18 +1,19 @@
 package org.obl.briscola.web
 
 import org.obl.raz.Path
-import org.obl.briscola.Card
 import org.obl.briscola.Seed
 import org.obl.briscola.player.PlayerId
 
 object Presentation {
 
-  case class EventAndState[E,S](event:E, state:S)    
-  case class Collection[T](members:Iterable[T])
+  final case class Card(number: Byte, seed: Seed.Value, points:Int)
   
-  case class Player(self:Path, name:String, webSocket:Path, createCompetition:Path)
-  case class PlayerState(player:Path, cards: Set[Card], score: Set[Card])
-  case class PlayerFinalState(player:Path, points:Int, score: Set[Card])
+  final case class EventAndState[E,S](event:E, state:S)    
+  final case class Collection[T](members:Iterable[T])
+  
+  final case class Player(self:Path, name:String, webSocket:Path, createCompetition:Path)
+  final case class PlayerState(player:Path, cards: Set[Card], score: Set[Card])
+  final case class PlayerFinalState(player:Path, points:Int, score: Set[Card])
 
   sealed trait ADT[E <: Enumeration] {
     def kind:E#Value
@@ -25,10 +26,10 @@ object Presentation {
   sealed trait PlayerEvent extends ADT[PlayerEventKind.type] {
     def kind:PlayerEventKind.Value
   }
-  case class PlayerLogOn(player:Path) extends PlayerEvent {
+  final case class PlayerLogOn(player:Path) extends PlayerEvent {
     lazy val kind = PlayerEventKind.playerLogOn
   }
-  case class PlayerLogOff(player:Path) extends PlayerEvent {
+  final case class PlayerLogOff(player:Path) extends PlayerEvent {
     lazy val kind = PlayerEventKind.playerLogOn
   }
   
@@ -36,7 +37,7 @@ object Presentation {
     val empty, active, dropped, finished = Value
   }
   
-  case class Move(player:Path, card:Card)
+  final case class Move(player:Path, card:Card)
 
   sealed trait GameState extends ADT[GameStateKind.type] {
     def kind:GameStateKind.Value
@@ -50,18 +51,18 @@ object Presentation {
     def kind:DropReasonKind.Value
   }
   
-  case class PlayerLeft(player:Path, reason:Option[String]) extends DropReason {
+  final case class PlayerLeft(player:Path, reason:Option[String]) extends DropReason {
     val kind = DropReasonKind.playerLeft
   }
   
-  case class ActiveGameState(self:Path, briscolaCard:Card, moves:Seq[Move], nextPlayers:Seq[Path], currentPlayer:Path, 
+  final case class ActiveGameState(self:Path, briscolaCard:Card, moves:Seq[Move], nextPlayers:Seq[Path], currentPlayer:Path, 
       isLastHandTurn:Boolean, isLastGameTurn:Boolean, players:Seq[Path], playerState:Option[Path], deckCardsNumber:Int) extends GameState {
     def kind = GameStateKind.active
   }
-  case class DroppedGameState(self:Path, briscolaCard:Card, moves:Seq[Move], nextPlayers:Seq[Path], dropReason:DropReason) extends GameState {
+  final case class DroppedGameState(self:Path, briscolaCard:Card, moves:Seq[Move], nextPlayers:Seq[Path], dropReason:DropReason) extends GameState {
     def kind = GameStateKind.dropped
   }
-  case class FinalGameState(self:Path, briscolaCard:Card, playersOrderByPoints:Seq[PlayerFinalState], winner:PlayerFinalState) extends GameState {
+  final case class FinalGameState(self:Path, briscolaCard:Card, playersOrderByPoints:Seq[PlayerFinalState], winner:PlayerFinalState) extends GameState {
     def kind = GameStateKind.finished
   }
   case object EmptyGameState extends GameState {
@@ -74,13 +75,13 @@ object Presentation {
   sealed trait BriscolaEvent extends ADT[BriscolaEventKind.type] {
     def kind:BriscolaEventKind.Value
   }
-  case class GameStarted(game:ActiveGameState) extends BriscolaEvent {
+  final case class GameStarted(game:ActiveGameState) extends BriscolaEvent {
     lazy val kind = BriscolaEventKind.gameStarted
   }
-  case class CardPlayed(game:Path, player:Path, card:Card) extends BriscolaEvent {
+  final case class CardPlayed(game:Path, player:Path, card:Card) extends BriscolaEvent {
     lazy val kind = BriscolaEventKind.cardPlayed
   }
-  case class GameDropped(game:Path, reason:DropReason) extends BriscolaEvent {
+  final case class GameDropped(game:Path, reason:DropReason) extends BriscolaEvent {
     lazy val kind = BriscolaEventKind.gameDropped
   }
   
@@ -97,10 +98,10 @@ object Presentation {
   case object SingleMatch extends MatchKind {
     val kind = MatchKindKind.singleMatch
   }
-  case class NumberOfGamesMatchKind(numberOfMatches:Int) extends MatchKind {
+  final case class NumberOfGamesMatchKind(numberOfMatches:Int) extends MatchKind {
     val kind = MatchKindKind.numberOfGamesMatchKind
   }
-  case class TargetPointsMatchKind(winnerPoints:Int) extends MatchKind {
+  final case class TargetPointsMatchKind(winnerPoints:Int) extends MatchKind {
     val kind = MatchKindKind.targetPointsMatchKind
   }
   
@@ -113,13 +114,13 @@ object Presentation {
     val kind = CompetitionStartDeadlineKind.allPlayers
   }
   
-  case class OnPlayerCount(count:Int) extends CompetitionStartDeadline {
+  final case class OnPlayerCount(count:Int) extends CompetitionStartDeadline {
     val kind = CompetitionStartDeadlineKind.onPlayerCount
   }
 
-  case class Competition(players:Set[Path], kind:MatchKind, deadline:CompetitionStartDeadline)
+  final case class Competition(players:Set[Path], kind:MatchKind, deadline:CompetitionStartDeadline)
   
-  case class CompetitionState(self:Path, 
+  final case class CompetitionState(self:Path, 
       competition:Option[Competition], kind:CompetitionStateKind.Value, 
       acceptingPlayers:Set[Path], decliningPlayers:Set[Path], 
       accept:Option[Path], decline:Option[Path]) extends ADT[CompetitionStateKind.type]
@@ -130,13 +131,13 @@ object Presentation {
   sealed trait CompetitionEvent extends ADT[CompetitionEventKind.type] {
     def kind:CompetitionEventKind.Value
   }
-  case class CreatedCompetition(issuer:Path, competition:Path) extends CompetitionEvent {
+  final case class CreatedCompetition(issuer:Path, competition:Path) extends CompetitionEvent {
     lazy val kind = CompetitionEventKind.createdCompetition
   } 
-  case class CompetitionAccepted(player:Path, competition:Path) extends CompetitionEvent {
+  final case class CompetitionAccepted(player:Path, competition:Path) extends CompetitionEvent {
     lazy val kind = CompetitionEventKind.playerAccepted
   }
-  case class CompetitionDeclined(player:Path, competition:Path, reason:Option[String]) extends CompetitionEvent {
+  final case class CompetitionDeclined(player:Path, competition:Path, reason:Option[String]) extends CompetitionEvent {
     lazy val kind = CompetitionEventKind.playerDeclined
   }
       
@@ -144,11 +145,11 @@ object Presentation {
 
     import org.obl.briscola.competition
 
-    case class Competition(players:Seq[PlayerId], kind:competition.MatchKind, deadline:competition.CompetitionStartDeadline)
-    case class Player(name:String, password:String)
+    final case class Competition(players:Seq[PlayerId], kind:competition.MatchKind, deadline:competition.CompetitionStartDeadline)
+    final case class Player(name:String, password:String)
     
   }
   
-  case class SiteMap(players:Path, playerLogin:Path) 
+  final case class SiteMap(players:Path, playerLogin:Path) 
   
 }

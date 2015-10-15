@@ -42,7 +42,7 @@ class SessionWrapper(session:Session) {
   
 }
 
-class PlayerWebSocketEndPoint(contextPath: PathSg, webSocketRoutes: => WebSocketRoutes,
+class PlayerWebSocketEndPoint(contextPath: PathSg, playerWebSocketRoutes: => PlayerWebSocketRoutes,
     playerService: => PlayerService,
     gameService: => BriscolaService,
     competitionService: => CompetitionsService,
@@ -60,14 +60,14 @@ class PlayerWebSocketEndPoint(contextPath: PathSg, webSocketRoutes: => WebSocket
     val sw = new SessionWrapper(session)
     UrlParseUtil.parseUrl(session.getRequestURI.toString()).map { url =>
       url match {
-        case webSocketRoutes.PlayerById(pid) =>
+        case playerWebSocketRoutes.PlayerById(pid) =>
           sw.receiveFrom(gameService.changes.collect(gameStateChangeFilter(pid)))
           sw.receiveFrom(competitionService.changes.collect(competitionStateChangeFilter(pid)))
           sw.receiveFrom(playerService.changes.collect(playerStateChangeFilter(pid)))
           
         case x => {
           println("*" * 80)
-          println(webSocketRoutes.PlayerById.toUriTemplate("var").render)
+          println(playerWebSocketRoutes.PlayerById.toUriTemplate("var").render)
           println(s"unmatched websocket uri, uri:$x")
         }
       }

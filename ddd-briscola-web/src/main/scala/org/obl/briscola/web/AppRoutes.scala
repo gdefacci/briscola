@@ -15,7 +15,7 @@ trait AppRoutes {
   def gameRoutes:GameRoutes
   def competitionRoutes:CompetitionRoutes
   def siteMapRoutes:SiteMapRoutes
-  def webSocketRoutes:WebSocketRoutes
+  def playerWebSocketRoutes:PlayerWebSocketRoutes
 }
 
 object AppRoutesImpl {
@@ -46,17 +46,15 @@ class AppRoutesImpl(val config:RoutesConfig) extends AppRoutes {
     val contextPath:PathSg = config.contextPath
   }
   
-  val webSocketRoutes = new WebSocketRoutes with BaseRoutes {
-    val servletPath = PathSg(Nil) // FIXME move in config
-    
-    private val playerById = resources.WebSockets.Players.byId
+  val playerWebSocketRoutes = new PlayerWebSocketRoutes with BaseRoutes {
+    private val playerById      = resources.WebSockets.Players.byId
     
     val PlayerById              = playerById.toPathConverter.encodersWrap.decoderWrap
     val playerByIdUriTemplate   = playerById.toUriTemplate("playerId")
   }
   
   val playerRoutes = new PlayerRoutes with BaseRoutes {
-    val servletPath = config.playerServletPath
+    val servletPath             = config.playerServletPath
     
     val Players                 = resources.Players.encodersWrap
     val PlayerLogin             = resources.Players.login.encodersWrap
@@ -64,7 +62,7 @@ class AppRoutesImpl(val config:RoutesConfig) extends AppRoutes {
   }
   
   val gameRoutes = new GameRoutes with BaseRoutes {
-    val servletPath     = config.gameServletPath
+    val servletPath             = config.gameServletPath
     
     val Games                   = resources.Games.encodersWrap
     val GameById                = resources.Games.byId.toPathCodec.encodersWrap

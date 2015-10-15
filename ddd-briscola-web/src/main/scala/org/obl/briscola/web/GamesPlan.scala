@@ -30,11 +30,14 @@ trait GamePresentationAdapter {
   def gameRoutes: GameRoutes
   def playerRoutes: PlayerRoutes
 
+  def apply(card:Card):Presentation.Card = 
+    Presentation.Card(card.number, card.seed, card.points)
+  
   def apply(ps: PlayerState): Presentation.PlayerState =
-    Presentation.PlayerState(playerRoutes.PlayerById(ps.id), ps.cards, ps.score)
+    Presentation.PlayerState(playerRoutes.PlayerById(ps.id), ps.cards.map(apply(_)), ps.score.map(apply(_)))
 
   def apply(ps: PlayerFinalState): Presentation.PlayerFinalState =
-    Presentation.PlayerFinalState(playerRoutes.PlayerById(ps.id), ps.points, ps.score)
+    Presentation.PlayerFinalState(playerRoutes.PlayerById(ps.id), ps.points, ps.score.map(apply(_)))
 
   def apply(ps: PlayerLeft): Presentation.PlayerLeft =
     Presentation.PlayerLeft(playerRoutes.PlayerById(ps.player), ps.reason)
@@ -50,13 +53,13 @@ trait GamePresentationAdapter {
     case CardPlayed(pid, crd) => Presentation.CardPlayed(
       gameRoutes.GameById(gid),
       playerRoutes.PlayerById(pid),
-      crd)
+      apply(crd))
   }
 
   def apply(gm: ActiveGameState, player: Option[PlayerId]): Presentation.ActiveGameState =
     Presentation.ActiveGameState(
       gameRoutes.GameById(gm.id),
-      gm.briscolaCard, gm.moves.map(m => Presentation.Move(playerRoutes.PlayerById(m.player.id), m.card)),
+      apply(gm.briscolaCard), gm.moves.map(m => Presentation.Move(playerRoutes.PlayerById(m.player.id), apply(m.card))),
       gm.nextPlayers.map(p => playerRoutes.PlayerById(p.id)),
       playerRoutes.PlayerById(gm.currentPlayer.id),
       gm.isLastHandTurn, gm.isLastGameTurn,
@@ -67,7 +70,7 @@ trait GamePresentationAdapter {
   def apply(gm: DroppedGameState): Presentation.DroppedGameState =
     Presentation.DroppedGameState(
       gameRoutes.GameById(gm.id),
-      gm.briscolaCard, gm.moves.map(m => Presentation.Move(playerRoutes.PlayerById(m.player.id), m.card)),
+      apply(gm.briscolaCard), gm.moves.map(m => Presentation.Move(playerRoutes.PlayerById(m.player.id), apply(m.card))),
       gm.nextPlayers.map(p => playerRoutes.PlayerById(p.id)),
       apply(gm.dropReason))
     
@@ -81,7 +84,7 @@ trait GamePresentationAdapter {
     case gm: FinalGameState =>
       Presentation.FinalGameState(
         gameRoutes.GameById(gm.id),
-        gm.briscolaCard,
+        apply(gm.briscolaCard),
         gm.playersOrderByPoints.map(apply(_)),
         apply(gm.winner))
   }
