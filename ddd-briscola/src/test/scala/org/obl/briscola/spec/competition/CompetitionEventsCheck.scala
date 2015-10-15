@@ -5,10 +5,11 @@ import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Prop.{forAll, BooleanOperators}
 import org.cvogt.scalacheck.GenTree
-
 import org.obl.briscola.player._
 import org.obl.briscola.competition._
 import org.obl.ddd.Runner
+import org.obl.briscola.competition.CompetitionStartDeadline.AllPlayers
+import org.obl.briscola.competition.CompetitionStartDeadline.OnPlayerCount
 
 object CompetitionEventsCheck extends scala.App {
 
@@ -16,9 +17,9 @@ object CompetitionEventsCheck extends scala.App {
   
   implicit val aPlayerId = Arbitrary( Gen.oneOf(avaiablePlayers) )
 
-  implicit val aCompetitionStartDeadline = Arbitrary( GenTree.tree[CompetitionStartDeadline] )
-  implicit val aMatchKind = Arbitrary( GenTree.tree[MatchKind] )
-  val aCommand = GenTree.tree[CompetitionCommand]
+  implicit val aCompetitionStartDeadline = Arbitrary( Gen.oneOf[CompetitionStartDeadline](AllPlayers, OnPlayerCount(3)) )
+  implicit val aMatchKind = Arbitrary( Gen.oneOf[MatchKind](SingleMatch, NumberOfGamesMatchKind(1)) )
+  val aCommand = GenTree.partialTree[CompetitionCommand]
   
   val commandsList = Gen.listOf(aCommand)
 

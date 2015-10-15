@@ -24,7 +24,7 @@ object GameEventsCheck extends scala.App {
     Card(num, seed)
   })
   
-  val aCommand = GenTree.tree[BriscolaCommand]
+  val aCommand = GenTree.partialTree[BriscolaCommand]
   
   val commandsList = Gen.listOf(aCommand)
 
