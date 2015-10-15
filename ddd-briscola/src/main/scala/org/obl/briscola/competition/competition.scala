@@ -38,9 +38,9 @@ trait CompetitionDecider extends Decider[CompetitionState, CompetitionCommand, C
       case (EmptyCompetition, _) => -\/(CompetitionNotStarted)
       case (comp:OpenCompetition, cmd:CreateCompetition) => -\/(CompetitionAlreadyStarted)
       case (c:DroppedCompetition, _) => -\/(CompetitionDropped)  
-      case (FullfilledCompetition(id,_,_,_,None), SetCompetitonGame(gid)) => \/-(Seq(CompetitonGameHasBeenSet(gid)))  
+//      case (FullfilledCompetition(id,_,_,_,None), SetCompetitonGame(gid)) => \/-(Seq(CompetitonGameHasBeenSet(gid)))  
       case (c:FullfilledCompetition, _) => -\/(CompetitionAlreadyFinished)
-      case (_, SetCompetitonGame(_)) => -\/(CompetitionIsNotFullfilled)
+//      case (_, SetCompetitonGame(_)) => -\/(CompetitionIsNotFullfilled)
     }
   }
   
@@ -68,7 +68,7 @@ trait CompetitionEvolver extends Evolver[CompetitionState, CompetitionEvent] {
         
       case (OpenCompetition(id,competition,acceptingPlayers,decliningPlayers), CompetitionAccepted(pid)) =>
         if (isFullfilled(competition, acceptingPlayers + pid)) 
-        	FullfilledCompetition(id, competition,acceptingPlayers + pid, decliningPlayers - pid, None)
+        	FullfilledCompetition(id, competition,acceptingPlayers + pid, decliningPlayers - pid)
         else
           OpenCompetition(id,competition,acceptingPlayers + pid, decliningPlayers - pid)
           
@@ -78,9 +78,6 @@ trait CompetitionEvolver extends Evolver[CompetitionState, CompetitionEvent] {
         else
           OpenCompetition(id, competition, acceptingPlayers - pid,  decliningPlayers + pid)
       
-      case (FullfilledCompetition(id, comp,accpt,decl, None), CompetitonGameHasBeenSet(gid))  => 
-          FullfilledCompetition(id, comp,accpt,decl, Some(gid))
-          
        case _ => {
         throw new RuntimeException(s"forbidden condition state:${s} event:${event}")
         

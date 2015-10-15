@@ -8,14 +8,14 @@ sealed trait Description {
   def text:String
 }
 
-case class DescriptionImpl(text: String) extends Description {
+final case class DescriptionImpl(text: String) extends Description {
   def +(d1: Description) = d1 match {
     case d1 @ DescriptionImpl(_) => DescriptionSeq(Seq(this, d1))
     case DescriptionSeq(dss) => DescriptionSeq(this +: dss)
   }
 }
 
-case class DescriptionSeq(descriptions: Seq[Description]) extends Description {
+final case class DescriptionSeq(descriptions: Seq[Description]) extends Description {
   def +(d1: Description) = d1 match {
     case d1 @ DescriptionImpl(_) => DescriptionSeq(descriptions :+ d1)
     case DescriptionSeq(dss) => DescriptionSeq(descriptions ++ dss)
@@ -44,7 +44,7 @@ sealed trait FailedExpectation[S <: State, E <: Event, Err <: DomainError] {
 
 }
 
-case class CheckResult[S <: State, E <: Event, Err <: DomainError](currentState: Err \/ (Seq[E], S), results:Seq[FailedExpectation[S,E,Err] \/ SuccessfullExpectation], sub:Seq[CheckResult[S,E,Err]])
+final case class CheckResult[S <: State, E <: Event, Err <: DomainError](currentState: Err \/ (Seq[E], S), results:Seq[FailedExpectation[S,E,Err] \/ SuccessfullExpectation], sub:Seq[CheckResult[S,E,Err]])
 
 class PrintlnReporter[S <: State, E <: Event, Err <: DomainError] extends (CheckResult[S,E,Err] => Unit) {
   
@@ -199,14 +199,14 @@ trait Spec[S <: State, C <: Command, E <: Event, Err <: DomainError] {
         case _ => false
       } } getOrElse false) with StateExpectation
 
-  private case class SuccessfullExpectationImpl(prerequisiteDescription:Description, expectation: Expectation) extends SuccessfullExpectation {
+  private final case class SuccessfullExpectationImpl(prerequisiteDescription:Description, expectation: Expectation) extends SuccessfullExpectation {
     lazy val expectationDescription = expectation.description
     def toString(indent:String) = s"$indent${prerequisiteDescription.text}\nexpect ${expectationDescription.text}"
     
     lazy val description = DescriptionSeq(Seq(prerequisiteDescription.text, s"expect ${expectationDescription.text}").map(DescriptionImpl(_)))
   } 
   
-  private case class FailedExpectationImpl(currentState: Err \/ (Seq[E], S), prerequisiteDescription:Description, expectation: Expectation) extends FailedExpectation[S,E,Err] {
+  private final case class FailedExpectationImpl(currentState: Err \/ (Seq[E], S), prerequisiteDescription:Description, expectation: Expectation) extends FailedExpectation[S,E,Err] {
     lazy val expectationDescription = expectation.description
     
     def subject = currentState match {

@@ -11,4 +11,4 @@ case object CompetitionAlreadyFinished extends CompetitionError
 case object CompetitionDropped extends CompetitionError
 case object CompetitionIsNotFullfilled extends CompetitionError
 
-case class CompetioBriscolaError(err:BriscolaError) extends CompetitionError
+final case class CompetioBriscolaError(err:BriscolaError) extends CompetitionError

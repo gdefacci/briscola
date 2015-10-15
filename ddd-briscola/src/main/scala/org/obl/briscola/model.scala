@@ -7,7 +7,7 @@ object Seed extends Enumeration {
   val bastoni, coppe, denari, spade = Value
 }
 
-case class Card(number: Byte, seed: Seed.Value)  {
+final case class Card(number: Byte, seed: Seed.Value)  {
   
   def points = {
     number match {
@@ -34,7 +34,7 @@ object Deck {
 
 }
 
-case class Deck(cards: Seq[Card]) {
+final case class Deck(cards: Seq[Card]) {
 
   lazy val isEmpty = cards.isEmpty
   
@@ -54,14 +54,21 @@ object GameState {
   
   val MIN_PLAYERS = 2
   val MAX_PLAYERS = 8
+  
+  def id(gm: GameState):Option[GameId] = gm match {
+    case EmptyGameState => None
+    case gm: ActiveGameState => Some(gm.id)
+    case gm: FinalGameState => Some(gm.id)
+    case gm: DroppedGameState => Some(gm.id)
+  }
 }
 
 sealed trait GameState extends State
 
-case class GameId(id:Long)
+final case class GameId(id:Long)
 
 case object EmptyGameState extends GameState 
-case class ActiveGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState]) extends GameState {
+final case class ActiveGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState]) extends GameState {
   
   assert(nextPlayers.nonEmpty)
 
@@ -78,11 +85,11 @@ case class ActiveGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[
 }
 
 sealed trait DropReason
-case class PlayerLeft(player:PlayerId, reason:Option[String]) extends DropReason
+final case class PlayerLeft(player:PlayerId, reason:Option[String]) extends DropReason
 
-case class DroppedGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState], dropReason:DropReason) extends GameState 
+final case class DroppedGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState], dropReason:DropReason) extends GameState 
 
-case class FinalGameState(id:GameId, briscolaCard:Card, players:Seq[PlayerFinalState]) extends GameState {
+final case class FinalGameState(id:GameId, briscolaCard:Card, players:Seq[PlayerFinalState]) extends GameState {
   
   lazy val playersOrderByPoints = players.toSeq.sortWith { (ps1, ps2) =>
     ps1.points > ps2.points || (ps1.points == ps2.points && ps1.score.size > ps2.score.size)
@@ -92,7 +99,7 @@ case class FinalGameState(id:GameId, briscolaCard:Card, players:Seq[PlayerFinalS
   
 } 
 
-case class Move(player: PlayerState, card: Card)
+final case class Move(player: PlayerState, card: Card)
 
-case class PlayerState(id: PlayerId, cards: Set[Card], score: Set[Card])
-case class PlayerFinalState(id: PlayerId, points:Int, score: Set[Card])
+final case class PlayerState(id: PlayerId, cards: Set[Card], score: Set[Card])
+final case class PlayerFinalState(id: PlayerId, points:Int, score: Set[Card])

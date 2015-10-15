@@ -19,7 +19,7 @@ class PublishDecider[S <: State, C <: Command, E <: Event, Err <: DomainError](d
   
 }
 
-case class Decision[S,C,E,Err](state:S, command:C, result:Err \/ Seq[E])
+final case class Decision[S,C,E,Err](state:S, command:C, result:Err \/ Seq[E])
 
 class PublishEvolver[S <: State, E <: Event](evolver:Evolver[S,E]) extends Evolver[S,E] {
   
@@ -35,4 +35,4 @@ class PublishEvolver[S <: State, E <: Event](evolver:Evolver[S,E]) extends Evolv
   
 }
 
-//case class StateChange[S,E](oldState:S, event:E, state:S)
+//final case class StateChange[S,E](oldState:S, event:E, state:S)

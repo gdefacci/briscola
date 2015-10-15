@@ -3,14 +3,14 @@ package competition
 
 import player._
 
-case class CompetitionId(id:Long)
+final case class CompetitionId(id:Long)
 
-case class Competition(players:Set[Player], kind:MatchKind, deadline:CompetitionStartDeadline/*, FIXME"this functionality needs a timer" endTime:LocalDateTime */)
+final case class Competition(players:Set[Player], kind:MatchKind, deadline:CompetitionStartDeadline/*, FIXME"this functionality needs a timer" endTime:LocalDateTime */)
 
 sealed trait MatchKind
 case object SingleMatch extends MatchKind
-case class NumberOfGamesMatchKind(numberOfMatches:Int) extends MatchKind
-case class TargetPointsMatchKind(winnerPoints:Int) extends MatchKind
+final case class NumberOfGamesMatchKind(numberOfMatches:Int) extends MatchKind
+final case class TargetPointsMatchKind(winnerPoints:Int) extends MatchKind
 
 sealed trait CompetitionStartDeadline
 
@@ -26,7 +26,7 @@ object CompetitionStartDeadline {
    * When count players join the match, the match is created. The match can be created before the timeout expires.
    * The game will have count players
    */
-  case class OnPlayerCount(count:Int) extends CompetitionStartDeadline
+  final case class OnPlayerCount(count:Int) extends CompetitionStartDeadline
   
   /**
    * FIXME This functionality needs a timer
@@ -36,8 +36,19 @@ object CompetitionStartDeadline {
    * 
    * playes.length >= n >= count
    */
-//  case class AtLeastPlayerCount(count:Int) extends CompetitionStartDeadline
+//  final case class AtLeastPlayerCount(count:Int) extends CompetitionStartDeadline
 
+}
+
+object CompetitionState {
+  
+  def id(comp:CompetitionState):Option[CompetitionId] = comp match {
+    case EmptyCompetition => None
+    case OpenCompetition(id,_,_,_) => Some(id)
+    case DroppedCompetition(id,_,_,_) => Some(id)
+    case FullfilledCompetition(id,_,_,_) => Some(id)
+  }
+  
 }
 
 sealed trait CompetitionState extends org.obl.ddd.State
@@ -47,6 +58,6 @@ sealed trait ClientCompetitionState extends CompetitionState {
 }
 
 case object EmptyCompetition extends CompetitionState  
-case class OpenCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends ClientCompetitionState  
-case class DroppedCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends ClientCompetitionState  
-case class FullfilledCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId], game:Option[GameId]) extends CompetitionState  
+final case class OpenCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends ClientCompetitionState  
+final case class DroppedCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends ClientCompetitionState  
+final case class FullfilledCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends CompetitionState  

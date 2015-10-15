@@ -42,6 +42,32 @@ object Runner {
     }
   }
   
+  def fromCommandSeq[S <: State, C <: Command, E <: Event, Err <: DomainError](decider:Decider[S,C,E,Err], evolver:Evolver[S,E]):(S,Seq[C]) => Err \/ (Seq[E], S) = {
+    val runner = apply[S,C,E,Err](decider, evolver)
+    (state, commands) => {
+      val z:Err \/ (Seq[E], S) = \/-(Nil, state)
+      commands.foldLeft(z) { (acc, cmd) =>
+        acc.flatMap { p =>
+          val (events, state) = p
+          runner(state, cmd).map( e1 => (events ++ e1._1) -> e1._2)
+        }
+      }      
+    }
+  }
+  
+  def changesFromCommandSeq[S <: State, C <: Command, E <: Event, Err <: DomainError](decider:Decider[S,C,E,Err], evolver:Evolver[S,E]):(S,Seq[C]) => Err \/ Seq[StateChange[S,E]] = {
+    val runner = changes[S,C,E,Err](decider, evolver)
+    (state, commands) => {
+      val z:Err \/ (Seq[StateChange[S,E]], S) = \/-(Nil, state)
+      commands.foldLeft(z) { (acc, cmd) =>
+        acc.flatMap { p =>
+          val (changes, state) = p
+          runner(state, cmd).map( sc => (changes ++ sc) -> sc.last.state )
+        }
+      }.map(_._1)      
+    }
+  }
+  
   def changes[S <: State, C <: Command, E <: Event, Err <: DomainError](decider:Decider[S,C,E,Err], evolver:Evolver[S,E]):(S,C) => Err \/ Seq[StateChange[S,E]] = { (state, cmd) =>
     decider(state, cmd).map { evs =>
       evolver.changes(state, evs)
@@ -57,4 +83,4 @@ trait Repository[Id, T] {
   
 }
 
-case class StateChange[S,E](oldState:S, event:E, state:S)
+final case class StateChange[S,E](oldState:S, event:E, state:S)

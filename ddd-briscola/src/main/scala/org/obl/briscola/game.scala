@@ -115,7 +115,7 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
 
   def apply(s:GameState, event:BriscolaEvent):GameState = {
     (s,event) match {
-      case (_, GameStarted(state)) => 
+      case (EmptyGameState, GameStarted(state)) => 
         state
         
       case (gm @ ActiveGameState(id, briscolaCard, deck, moves, nextPlayers), CardPlayed(cardPlayerId, card)) =>
