@@ -1,31 +1,20 @@
 package org.obl.briscola
 package web
 
-import javax.websocket.Endpoint
-import javax.websocket.Session
-import javax.websocket.CloseReason
-import javax.websocket.EndpointConfig
+import org.obl.briscola.player.PlayerId
+import org.obl.briscola.web.Presentation.EventAndState
+import org.obl.briscola.web.StateChangeFilter.StateChangeFilter
+import org.obl.briscola.web.util.ArgonautEncodeHelper.responseBody
 import org.obl.briscola.web.util.UrlParseUtil
-import org.obl.briscola.web.util.ArgonautEncodeHelper._
-import org.obl.briscola.web.Presentation.EventAndState
-import javax.servlet.http.HttpServlet
-import javax.servlet.ServletConfig
-import javax.websocket.server.ServerContainer
-import javax.websocket.server.ServerEndpointConfig
-import org.obl.raz.PathSg
-import org.obl.briscola.competition._
-import org.obl.briscola.player._
 import org.obl.ddd.StateChange
-import rx.lang.scala.Observable
+
+import StateChangeFilter.StateChangeFilter
 import argonaut.EncodeJson
-import org.obl.briscola.web.Presentation.EventAndState
-import StateChangeFilter._
-import org.obl.briscola.service._
-import org.obl.briscola.service.player.PlayerEvent
-import org.obl.briscola.web.util.Plan
-import org.obl.briscola.web.util.ServletRoutes
-import org.obl.raz.RelativePath
-import org.obl.raz.PathSg
+import javax.websocket.CloseReason
+import javax.websocket.Endpoint
+import javax.websocket.EndpointConfig
+import javax.websocket.Session
+import rx.lang.scala.Observable
 
 class SessionWrapper(session:Session) {
   
@@ -42,15 +31,37 @@ class SessionWrapper(session:Session) {
   
 }
 
-class PlayerWebSocketEndPoint(contextPath: PathSg, playerWebSocketRoutes: => PlayerWebSocketRoutes,
-    playerService: => PlayerService,
-    gameService: => BriscolaService,
-    competitionService: => CompetitionsService,
-    playerStateChangeFilter:StateChangeFilter[Iterable[Player], PlayerEvent, Iterable[Presentation.Player], Presentation.PlayerEvent],
-    gameStateChangeFilter:StateChangeFilter[GameState, BriscolaEvent, Presentation.GameState, Presentation.BriscolaEvent],
-    competitionStateChangeFilter:StateChangeFilter[CompetitionState, CompetitionEvent, Presentation.CompetitionState, Presentation.CompetitionEvent]) extends Endpoint {
-    
+trait PlayerSocketConfig {
+  def config(session:Session, pid:PlayerId):Unit 
+}
 
+object PlayerSocketConfig {
+  
+  def apply(cfg:(Session, PlayerId) => Unit) = new PlayerSocketConfig {
+    def config(session:Session, pid:PlayerId):Unit = {
+      cfg(session, pid)
+    }
+  }
+  
+  def apply(cfgs:Seq[PlayerSocketConfig]):PlayerSocketConfig = 
+    PlayerSocketConfig { (session, pid) =>
+      cfgs.foreach( cfg => cfg.config(session, pid) )
+    }
+  
+}
+
+class BasePlayerSocketConfig[S,E,PS,PE](
+    changes: => Observable[StateChange[S, E]],
+    gameStateChangeFilter: StateChangeFilter[S, E, PS, PE])(implicit ej: EncodeJson[EventAndState[PE, PS]]) extends PlayerSocketConfig {
+  
+  def config(session: Session, pid: PlayerId): Unit = {
+    new SessionWrapper(session).receiveFrom(changes.collect(gameStateChangeFilter(pid)))
+  }
+}
+
+
+class PlayerWebSocketEndPoint(playerWebSocketRoutes: => PlayerWebSocketRoutes, wsConfig:PlayerSocketConfig) extends Endpoint {
+    
   import jsonEncoders._
 
   override def onOpen(session: Session, config: EndpointConfig) = {
@@ -61,9 +72,7 @@ class PlayerWebSocketEndPoint(contextPath: PathSg, playerWebSocketRoutes: => Pla
     UrlParseUtil.parseUrl(session.getRequestURI.toString()).map { url =>
       url match {
         case playerWebSocketRoutes.PlayerById(pid) =>
-          sw.receiveFrom(gameService.changes.collect(gameStateChangeFilter(pid)))
-          sw.receiveFrom(competitionService.changes.collect(competitionStateChangeFilter(pid)))
-          sw.receiveFrom(playerService.changes.collect(playerStateChangeFilter(pid)))
+          wsConfig.config(session, pid)
           
         case x => {
           println("*" * 80)

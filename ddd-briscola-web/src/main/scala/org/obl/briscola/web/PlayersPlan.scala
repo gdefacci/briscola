@@ -14,9 +14,6 @@ import scalaz.stream.Process
 import scalaz.stream.Exchange
 import org.obl.briscola.web.util.RazWsHelper
 import org.http4s.websocket.WebsocketBits.WebSocketFrame
-import org.http4s.websocket.WebsocketBits.Text
-import org.http4s.websocket.WebsocketBits.Ping
-import org.http4s.websocket.WebsocketBits.Pong
 import org.obl.raz.PathConverter
 import org.obl.raz.SegmentPosition
 import org.obl.raz.BasePosition

@@ -22,9 +22,9 @@ import competition._
 class GamesStateChangeFilter(gameService: => BriscolaService, toPresentation: => GamePresentationAdapter) extends StateChangeFilter[GameState, BriscolaEvent, Presentation.GameState, Presentation.BriscolaEvent] {
   
   def apply(pid:PlayerId) = {
-    case StateChange(_, ev, state @ ActiveGameState(id,_,_,_,_)) if !gameService.isFinished(id) =>
+    case StateChange(_, ev, state @ ActiveGameState(id,_,_,_,_)) if state.players.map(_.id).contains(pid) && !gameService.isFinished(id) =>
       EventAndState(toPresentation(id, ev, pid), toPresentation(state, Some(pid)))
-    case StateChange(_, ev, state @ FinalGameState(id,_,_)) =>
+    case StateChange(_, ev, state @ FinalGameState(id,_,_)) if state.players.map(_.id).contains(pid)  =>
       EventAndState(toPresentation(id, ev, pid), toPresentation(state, Some(pid)))
   }
   
@@ -52,8 +52,10 @@ class CompetitionsStateChangeFilter( competitionService: => CompetitionsService,
     }
   }
   
+  def isToSend(pid:PlayerId, e: ClientCompetitionEvent, s: ClientCompetitionState):Boolean =
+    s.competition.players.map(_.id).contains(pid) && nonSelfCompetitionEvent(e, pid) && !competitionService.isFullfilled(s.id) 
+  
   def apply(pid:PlayerId) = {
-    case StateChange(_, e: ClientCompetitionEvent, s: ClientCompetitionState) if nonSelfCompetitionEvent(e, pid) && !competitionService.isFullfilled(s.id) => 
-      EventAndState(toPresentation(s.id, e, pid), toPresentation(s, Some(pid)))
+    case StateChange(_, e: ClientCompetitionEvent, s: ClientCompetitionState) if isToSend(pid,e,s) => EventAndState(toPresentation(s.id, e, pid), toPresentation(s, Some(pid)))
   }
 }

@@ -73,7 +73,8 @@ trait CompetitionPresentationAdapter {
   def apply(comp: ClientCompetitionState, pid: Option[PlayerId]): Presentation.CompetitionState = {
     val (competition, compKind, acceptingPlayers, decliningPlayers) = comp match {
       case c: OpenCompetition => (Some(c.competition), Presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
-      case c: DroppedCompetition => (Some(c.competition), Presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
+      case c: DroppedCompetition => (Some(c.competition), Presentation.CompetitionStateKind.dropped, c.acceptingPlayers, c.decliningPlayers)
+      case c: FullfilledCompetition => (Some(c.competition), Presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
     }
 
     Presentation.CompetitionState(
@@ -122,10 +123,15 @@ class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRo
     case POST -> routes.AcceptCompetition(id, pid) =>
       service.acceptCompetition(pid, id).map {
         case -\/(err) => InternalServerError(err.toString)
-        case \/-(v:ClientCompetitionState) =>
-          val content = toPresentation(v, Some(pid))
-          Ok(responseBody(content))
-        case _ => NotFound()
+        case \/-(st) =>
+          println(st)
+          st match {
+            case v:ClientCompetitionState =>
+              val content = toPresentation(v, Some(pid))
+              Ok(responseBody(content))
+              
+            case _ => NotFound()
+          }
       } getOrElse (NotFound())
 
     case POST -> routes.DeclineCompetition(id, pid) =>

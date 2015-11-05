@@ -1,21 +1,20 @@
 package org.obl.briscola.web
 
-import argonaut.DecodeJson
-import scalaz.{ -\/, \/, \/- }
-import org.obl.briscola.Seed
-import argonaut.DecodeResult
 import org.obl.briscola.Card
-import org.obl.briscola.player.PlayerId
-import org.obl.briscola.web.util.UrlParseUtil
-import org.obl.briscola.competition.SingleMatch
-import org.obl.briscola.competition.NumberOfGamesMatchKind
-import org.obl.briscola.competition.TargetPointsMatchKind
-import org.obl.briscola.competition.MatchKind
+import org.obl.briscola.Seed
 import org.obl.briscola.competition.CompetitionStartDeadline
-import org.obl.briscola.competition.CompetitionStartDeadline.OnPlayerCount
 import org.obl.briscola.competition.CompetitionStartDeadline.AllPlayers
+import org.obl.briscola.competition.CompetitionStartDeadline.OnPlayerCount
+import org.obl.briscola.competition.MatchKind
+import org.obl.briscola.competition.NumberOfGamesMatchKind
+import org.obl.briscola.competition.SingleMatch
+import org.obl.briscola.competition.TargetPointsMatchKind
+import org.obl.briscola.player.PlayerId
+import org.obl.briscola.web.util.ArgonautHelper.enumDecoder
+import org.obl.briscola.web.util.ArgonautHelper.pathDecoder
 
-import org.obl.briscola.web.util.ArgonautHelper._
+import argonaut.DecodeJson
+import argonaut.DecodeResult
 
 object jsonDecoders {
   

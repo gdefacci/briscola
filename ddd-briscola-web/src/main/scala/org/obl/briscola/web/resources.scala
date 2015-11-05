@@ -1,14 +1,12 @@
 package org.obl.briscola.web
 
-import scalaz.{-\/}
-import org.obl.raz._
-import org.obl.raz.PathConverter._
-import org.obl.raz.ext.ResourceHolder
-import org.obl.briscola.player.PlayerId
 import org.obl.briscola.GameId
 import org.obl.briscola.competition.CompetitionId
+import org.obl.briscola.player.PlayerId
+import org.obl.raz.BasePath.toPathSegmentAdder
+import org.obl.raz.HPath.toHPathSegmentAdder
+import org.obl.raz.PathConverter.Segment
 import org.obl.raz.ext.BaseResource
-import org.obl.raz.exceptions.PathExpectationException
 
 object resources {
 

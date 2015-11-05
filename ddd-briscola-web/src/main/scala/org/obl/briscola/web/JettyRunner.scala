@@ -12,41 +12,24 @@ import org.http4s.servlet.Http4sServlet
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.util.resource.Resource
 import org.eclipse.jetty.webapp.WebAppContext
-import org.obl.briscola.web.util.JettyPlanAdder._
+import org.obl.briscola.web.util.ServletContextPlanAdder._
 import org.obl.briscola.web.util.WSEndPointAdder._
 import org.obl.briscola.service._
+import javax.servlet.ServletContext
+import org.eclipse.jetty.util.component.LifeCycle
 
 object JettyRunner extends App {
 
-  val routesConfig = WebAppConfig.development
-  val app = org.obl.briscola.service.Config.simple.app
-  val routes = AppRoutesImpl(routesConfig)
-  val webApp = new BriscolaWebApp(routes, app)
+  val webAppConfig = new BriscolaWebAppConfig(WebAppConfig.development, org.obl.briscola.service.Config.simple.app)
 
-  class ConcretePlayerWebSocketEndPoint extends PlayerWebSocketEndPoint(routesConfig.contextPath,
-    routes.playerWebSocketRoutes,
-    app.playerService,
-    app.gameService,
-    app.competitionService,
-    new PlayersStateChangeFilter(webApp.playerPresentationAdapter),
-    new GamesStateChangeFilter(app.gameService, webApp.gamePresentationAdapter),
-    new CompetitionsStateChangeFilter(app.competitionService, webApp.competitionPresentationAdapter))
-
-  def configureWerbSockets(container: ServerContainer) = {
-    container.addWebSocketEndPoint[ConcretePlayerWebSocketEndPoint](routes.playerWebSocketRoutes.playerByIdUriTemplate)
-  }
-
-  def configureWeb(context: ServletContextHandler) = {
-    context.addPlan(webApp.competitionsPlan)
-    context.addPlan(webApp.gamesPlan)
-    context.addPlan(webApp.playersPlan)
-    context.addPlan(webApp.siteMapPlan)
-  }
+  class ConcretePlayerWebSocketEndPoint extends webAppConfig.ConfiguredPlayerWebSocketEndPoint
+  
+  val configurator = new BriscolaContainerConfigurator[ConcretePlayerWebSocketEndPoint](webAppConfig)
 
   val server = new Server();
 
   val connector = new ServerConnector(server);
-  connector.setPort(routesConfig.host.port);
+  connector.setPort(webAppConfig.routesConfig.host.port);
   server.addConnector(connector);
 
   val basePath = "src/main/webapp"
@@ -54,19 +37,26 @@ object JettyRunner extends App {
   val context = new WebAppContext();
   context.setResourceBase(basePath);
 
-  context.setContextPath("/" + routesConfig.contextPath.path.mkString("/"));
+  context.setContextPath("/" + webAppConfig.routesConfig.contextPath.path.mkString("/"));
   context.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "true");
   context.setInitParameter("org.eclipse.jetty.servlet.Default.useFileMappedBuffer", "false");
-
-  configureWeb(context)
 
   server.setHandler(context);
 
   val wscontainer = WebSocketServerContainerInitializer.configureContext(context);
-
   wscontainer.setDefaultMaxSessionIdleTimeout(0)
-  configureWerbSockets(wscontainer)
 
+  context.addLifeCycleListener(new LifeCycle.Listener {
+    def lifeCycleFailure(l: org.eclipse.jetty.util.component.LifeCycle, err: Throwable): Unit = {}
+    def lifeCycleStarted(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {}
+    def lifeCycleStarting(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {
+      configurator.configureWeb(context.getServletContext)
+      configurator.configureWerbSockets(wscontainer)
+    }
+    def lifeCycleStopped(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {}
+    def lifeCycleStopping(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {}
+  })
+  
   server.start();
   server.dump(System.err);
   server.join();

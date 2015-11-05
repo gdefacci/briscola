@@ -20,7 +20,7 @@ trait AppRoutes {
 
 object AppRoutesImpl {
   
-  def apply(config:RoutesConfig) = new AppRoutesImpl(config)
+  def apply(config:RoutesServletConfig) = new AppRoutesImpl(config)
   
 }
 
@@ -28,7 +28,7 @@ trait SiteMapRoutes extends ServletRoutes {
   def SiteMap:Path
 }
 
-trait RoutesConfig {
+trait RoutesServletConfig {
   def host:PathBase
   def contextPath:PathSg
   
@@ -39,7 +39,7 @@ trait RoutesConfig {
   
 }
 
-class AppRoutesImpl(val config:RoutesConfig) extends AppRoutes {
+class AppRoutesImpl(val config:RoutesServletConfig) extends AppRoutes {
 
   trait BaseRoutes {
     val host:PathBase = config.host

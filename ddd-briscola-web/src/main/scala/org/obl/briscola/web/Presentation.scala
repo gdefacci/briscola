@@ -11,9 +11,12 @@ object Presentation {
   final case class EventAndState[E,S](event:E, state:S)    
   final case class Collection[T](members:Iterable[T])
   
+  sealed trait Score
+  final case class PlayerScore(cards:Set[Card])
+  
   final case class Player(self:Path, name:String, webSocket:Path, createCompetition:Path)
-  final case class PlayerState(player:Path, cards: Set[Card], score: Set[Card])
-  final case class PlayerFinalState(player:Path, points:Int, score: Set[Card])
+  final case class PlayerState(player:Path, cards: Set[Card], score: PlayerScore)
+  final case class PlayerFinalState(player:Path, points:Int, score: PlayerScore)
 
   sealed trait ADT[E <: Enumeration] {
     def kind:E#Value
@@ -56,7 +59,7 @@ object Presentation {
   }
   
   final case class ActiveGameState(self:Path, briscolaCard:Card, moves:Seq[Move], nextPlayers:Seq[Path], currentPlayer:Path, 
-      isLastHandTurn:Boolean, isLastGameTurn:Boolean, players:Seq[Path], playerState:Option[Path], deckCardsNumber:Int) extends GameState {
+      isLastHandTurn:Boolean, isLastGameTurn:Boolean, players:Set[Path], playerState:Option[Path], deckCardsNumber:Int) extends GameState {
     def kind = GameStateKind.active
   }
   final case class DroppedGameState(self:Path, briscolaCard:Card, moves:Seq[Move], nextPlayers:Seq[Path], dropReason:DropReason) extends GameState {
@@ -86,7 +89,7 @@ object Presentation {
   }
   
   object CompetitionStateKind extends Enumeration {
-    val open, dropped = Value
+    val open, dropped, fullfilled = Value
   }
 
   object MatchKindKind extends Enumeration {

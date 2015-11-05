@@ -34,10 +34,10 @@ trait GamePresentationAdapter {
     Presentation.Card(card.number, card.seed, card.points)
   
   def apply(ps: PlayerState): Presentation.PlayerState =
-    Presentation.PlayerState(playerRoutes.PlayerById(ps.id), ps.cards.map(apply(_)), ps.score.map(apply(_)))
+    Presentation.PlayerState(playerRoutes.PlayerById(ps.id), ps.cards.map(apply(_)), Presentation.PlayerScore(ps.score.cards.map( c => apply(c))) )
 
   def apply(ps: PlayerFinalState): Presentation.PlayerFinalState =
-    Presentation.PlayerFinalState(playerRoutes.PlayerById(ps.id), ps.points, ps.score.map(apply(_)))
+    Presentation.PlayerFinalState(playerRoutes.PlayerById(ps.id), ps.points, Presentation.PlayerScore(ps.score.cards.map(apply(_))) )
 
   def apply(ps: PlayerLeft): Presentation.PlayerLeft =
     Presentation.PlayerLeft(playerRoutes.PlayerById(ps.player), ps.reason)

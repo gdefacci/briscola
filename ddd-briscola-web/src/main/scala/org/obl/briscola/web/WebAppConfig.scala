@@ -12,7 +12,7 @@ object WebAppConfig {
 
   }
 
-  val development = new RoutesConfig with DefaultRoutesConfig {
+  val development = new RoutesServletConfig with DefaultRoutesConfig {
     val host = HTTP("localhost", 8080)
     val contextPath = PathSg("app")
   }

@@ -66,6 +66,8 @@ object jsonEncoders {
     EncodeJson.derive[Presentation.Card]
   }
   
+  implicit lazy val playerScore = EncodeJson.derive[Presentation.PlayerScore]
+  
   implicit lazy val playerStateEncoder = EncodeJson.derive[Presentation.PlayerState]
 
   implicit lazy val playerFinalStateEncoder = EncodeJson.derive[Presentation.PlayerFinalState]
@@ -145,7 +147,6 @@ object jsonEncoders {
     
     lazy val allPlayers = singletonADTEncoder[Presentation.CompetitionStartDeadlineKind.type, Presentation.AllPlayers.type] 
     lazy val onPlayerCountEncoder = withKind[Presentation.CompetitionStartDeadlineKind.type](derive[Presentation.OnPlayerCount]) 
-//      jencode2L((p: Presentation.OnPlayerCount) => (p.count, p.kind) )("count", "kind") 
     
     jencode1((p: Presentation.CompetitionStartDeadline) => p match {
       case t @ Presentation.AllPlayers => allPlayers(t)
