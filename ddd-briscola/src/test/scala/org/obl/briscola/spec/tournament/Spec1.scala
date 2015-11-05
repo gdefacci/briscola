@@ -24,7 +24,7 @@ object Spec1 extends App with TournamentSpec {
   
   {
     val players = 1.to(3).map(id => PlayerId(id)).toSet
-    val game = ActiveGameState(GameId(1), Card(7, Seed.bastoni), Deck.empty, Seq.empty, Seq(PlayerState(PlayerId(1), Set.empty, Set.empty))) 
+    val game = ActiveGameState(GameId(1), Card(7, Seed.bastoni), Deck.empty, Seq.empty, Seq(PlayerState(PlayerId(1), Set.empty, PlayerScore.empty))) 
     val fgame = FinalGameState(GameId(1), Card(7, Seed.bastoni), Nil) 
     
     check(

@@ -34,6 +34,8 @@ object TournamentEventsCheck extends scala.App {
 
     val aGameId = Gen.oneOf( 1.to(10).map( GameId(_) ) )
 
+    implicit val aPlayerScore = Arbitrary(for ( cards <- Gen.listOf(aCardGen) ) yield (PlayerScore(cards.toSet):Score))
+    
     implicit val anActiveGameState = Arbitrary(for (
       gameId <- aGameId;
       briscolaCard <- aCardGen;

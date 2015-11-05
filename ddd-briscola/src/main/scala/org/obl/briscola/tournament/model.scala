@@ -35,8 +35,8 @@ sealed trait TournamentStateResults {
     finishedGames.foldLeft(Map.empty[PlayerId, PlayerTournamentState]) { (mp, e) =>
       e._2.players.foldLeft(mp) { (mp, pl) =>
         mp.get(pl.id) match {
-          case None => mp + (pl.id -> PlayerTournamentState(pl.id, pl.points, pl.score.size))
-          case Some(ps) => mp + (pl.id -> PlayerTournamentState(pl.id, pl.points+ps.points, pl.score.size+ps.numberOfWonCards))
+          case None => mp + (pl.id -> PlayerTournamentState(pl.id, pl.points, pl.score.cards.size))
+          case Some(ps) => mp + (pl.id -> PlayerTournamentState(pl.id, pl.points+ps.points, pl.score.cards.size+ps.numberOfWonCards))
         }
       }
     } 

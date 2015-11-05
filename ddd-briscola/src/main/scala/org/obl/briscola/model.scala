@@ -78,7 +78,7 @@ final case class ActiveGameState(id:GameId, briscolaCard:Card, deck: Deck, moves
   
   lazy val isLastGameTurn = isLastHandTurn && deck.isEmpty && nextPlayers.head.cards.size == 1
   
-  lazy val players:Seq[PlayerState] = moves.map(_.player) ++ nextPlayers
+  lazy val players:Set[PlayerState] = moves.map(_.player).toSet ++ nextPlayers
   
   lazy val deckCardsNumber = deck.cards.length
   
@@ -92,7 +92,7 @@ final case class DroppedGameState(id:GameId, briscolaCard:Card, deck: Deck, move
 final case class FinalGameState(id:GameId, briscolaCard:Card, players:Seq[PlayerFinalState]) extends GameState {
   
   lazy val playersOrderByPoints = players.toSeq.sortWith { (ps1, ps2) =>
-    ps1.points > ps2.points || (ps1.points == ps2.points && ps1.score.size > ps2.score.size)
+    ps1.points > ps2.points || (ps1.points == ps2.points && ps1.score.cards.size > ps2.score.cards.size)
   }
   
   lazy val winner = playersOrderByPoints.head
@@ -101,5 +101,13 @@ final case class FinalGameState(id:GameId, briscolaCard:Card, players:Seq[Player
 
 final case class Move(player: PlayerState, card: Card)
 
-final case class PlayerState(id: PlayerId, cards: Set[Card], score: Set[Card])
-final case class PlayerFinalState(id: PlayerId, points:Int, score: Set[Card])
+sealed trait Score {
+  def cards:Set[Card]
+}
+final case class PlayerScore(cards:Set[Card]) extends Score
+object PlayerScore {
+  val empty = PlayerScore(Set.empty)
+}
+
+final case class PlayerState(id: PlayerId, cards: Set[Card], score: Score)
+final case class PlayerFinalState(id: PlayerId, points:Int, score: Score)

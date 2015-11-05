@@ -48,7 +48,7 @@ trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, Bri
               val (deck, plyrs) = players.foldLeft(Deck.initial -> Seq.empty[PlayerState]) { (acc, player) =>
                 val (deck, currPlayers) = acc
                 val (cards, newDeck) = deck.takeCards(3)
-                newDeck -> (currPlayers ++ Seq(PlayerState(player.id, cards, Set.empty)))
+                newDeck -> (currPlayers ++ Seq(PlayerState(player.id, cards, PlayerScore.empty)))
               }
               
               \/-(Seq(GameStarted(ActiveGameState(nextId, deck.briscolaCard(players.size), deck, Nil, plyrs))))
@@ -64,7 +64,7 @@ trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, Bri
       case (gm:ActiveGameState, PlayCard(pid, card)) if gm.currentPlayer.id == pid && !gm.currentPlayer.cards.contains(card) => {
         -\/(PlayerDoesNotOwnCard(pid, card, gm.currentPlayer.cards))
       }
-      case (gm:ActiveGameState, PlayCard(pid, _)) if !(gm.players contains pid) => {
+      case (gm:ActiveGameState, PlayCard(pid, _)) if !(gm.players.map(_.id) contains pid) => {
         -\/(InvalidPlayer(pid))
       }
       case (gm:ActiveGameState, PlayCard(pid, _)) if gm.currentPlayer.id != pid => {
@@ -104,7 +104,7 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
       val (mv, idx) = p
       val newIndex = if (idx < indexOfWinner) len + idx - indexOfWinner else idx - indexOfWinner
       val wonCards = if (idx == indexOfWinner) winnerCards else Nil
-      newIndex -> PlayerState(mv.player.id, mv.player.cards.filter(_!=mv.card), mv.player.score ++ wonCards)
+      newIndex -> PlayerState(mv.player.id, mv.player.cards.filter(_!=mv.card), PlayerScore(mv.player.score.cards ++ wonCards) )
     }
     idxStates.sortBy(_._1).map(_._2).foldLeft(deck -> Seq.empty[PlayerState]) { (acc, playerState) =>
       val (deck, states) = acc
@@ -125,7 +125,7 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
           val (newDeck, newPlayersState) = playHand(newMoves, briscolaCard.seed, gm.deck)
           
           if (gm.isLastGameTurn) {
-            val nsts = newPlayersState.map(s => PlayerFinalState(s.id, s.score.toSeq.map(_.points).sum, s.score ))
+            val nsts = newPlayersState.map(s => PlayerFinalState(s.id, s.score.cards.toSeq.map(_.points).sum, s.score ))
             FinalGameState(gm.id, gm.briscolaCard, nsts) 
           } else {
             gm.copy(deck = newDeck, moves = Nil, nextPlayers = newPlayersState)

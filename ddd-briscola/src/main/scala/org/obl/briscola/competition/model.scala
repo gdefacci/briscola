@@ -60,4 +60,4 @@ sealed trait ClientCompetitionState extends CompetitionState {
 case object EmptyCompetition extends CompetitionState  
 final case class OpenCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends ClientCompetitionState  
 final case class DroppedCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends ClientCompetitionState  
-final case class FullfilledCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends CompetitionState  
+final case class FullfilledCompetition(id:CompetitionId, competition:Competition, acceptingPlayers:Set[PlayerId], decliningPlayers:Set[PlayerId]) extends ClientCompetitionState  
