@@ -8,20 +8,17 @@ import org.obl.briscola.tournament._
 import rx.lang.scala.Observable
 import org.obl.ddd.StateChange
 import rx.lang.scala.Subscription
+import org.obl.briscola.player.GamePlayers
 
 trait TournamentService {
 
-  def startTournament(player: Set[PlayerId], kind: MatchKind): TournamentError \/ TournamentState
-//  def setTournamentGame(tournamentId: TournamentId, game: ActiveGameState): Option[TournamentError \/ TournamentState]
-//  def setGameOutcome(tournamentId: TournamentId, game: FinalGameState): Option[TournamentError \/ TournamentState]
-//  def dropTournamentGame(tournamentId: TournamentId, game: DroppedGameState): Option[TournamentError \/ TournamentState]
+  def startTournament(player: GamePlayers, kind: MatchKind): TournamentError \/ TournamentState
 
   def tournamentById(id: TournamentId): Option[TournamentState]
   def allTournament: Iterable[TournamentState]
 
   def changes: Observable[StateChange[TournamentState, TournamentEvent]]
 
-//  def isCompleted(id: TournamentId): Boolean
 }
 
 trait BaseTournamentService extends BaseAggregateService[TournamentId, TournamentState, TournamentCommand, TournamentEvent, TournamentError] with TournamentService {
@@ -30,10 +27,6 @@ trait BaseTournamentService extends BaseAggregateService[TournamentId, Tournamen
 
   protected def aggregateId(s: TournamentState): Option[TournamentId] = TournamentState.id(s)
 
-//  def startTournament(players: Set[PlayerId], kind: MatchKind): TournamentError \/ TournamentState =
-//    runCommand(EmptyTournamentState, StartTournament(players, kind))
-
-    
   def gameService: BriscolaService
 
   private def startGame(ts: ActiveTournamentState): TournamentError \/ TournamentState = {
@@ -74,7 +67,7 @@ trait BaseTournamentService extends BaseAggregateService[TournamentId, Tournamen
     }
   }
   
-  def startTournament(players: Set[PlayerId], kind: MatchKind): TournamentError \/ TournamentState =
+  def startTournament(players: GamePlayers, kind: MatchKind): TournamentError \/ TournamentState =
     runCommand(EmptyTournamentState, StartTournament(players, kind)).flatMap {
       case ts @ ActiveTournamentState(id, players, kind, finished, actives) =>
         startGame(ts)
@@ -101,10 +94,5 @@ trait BaseTournamentService extends BaseAggregateService[TournamentId, Tournamen
 
   def tournamentById(id: TournamentId): Option[TournamentState] = repository.get(id)
   def allTournament: Iterable[TournamentState] = repository.all
-
-  def isCompleted(id: TournamentId): Boolean = repository.get(id) match {
-    case Some(cts: CompletedTournamentState) => true
-    case _ => false
-  }
 
 }

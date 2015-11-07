@@ -32,7 +32,7 @@ object GameSpec1 extends App with BriscolaSpec {
     val players = Set(PlayerId(1))
     
     check(
-      When(StartGame(Set(PlayerId(1)))) expect
+      When(StartGame(Players(Set(PlayerId(1))))) expect
         ErrorIs(TooFewPlayers(players, GameState.MIN_PLAYERS)))
   }
 
@@ -41,7 +41,7 @@ object GameSpec1 extends App with BriscolaSpec {
 
     check(s"are acepted at max ${GameState.MAX_PLAYERS} players",
 
-      When(StartGame(players)) expect
+      When(StartGame(Players(players))) expect
         ErrorIs(TooManyPlayers(players, GameState.MAX_PLAYERS))
     ) 
   }
@@ -49,14 +49,14 @@ object GameSpec1 extends App with BriscolaSpec {
   {
     val players = Set(PlayerId(1), PlayerId(2))
     check(
-      When(StartGame(players), StartGame(players)) expect ErrorIs(GameAlreadyStarted)
+      When(StartGame(Players(players)), StartGame(Players(players))) expect ErrorIs(GameAlreadyStarted)
     )
   }
 
   {
     val players = Set(PlayerId(1), PlayerId(2))
     check(
-      When(StartGame(players)) expect (
+      When(StartGame(Players(players))) expect (
         EventsThat("include only GameStarted") {
           case Seq(GameStarted(_)) => true
           case _ => false
@@ -100,7 +100,7 @@ object GameSpec1 extends App with BriscolaSpec {
    
     val players = Set(PlayerId(1), PlayerId(2))
     check(
-      (When(StartGame(players)) expect (
+      (When(StartGame(Players(players))) expect (
         EventsThat("include only GameStarted") {
           case Seq(GameStarted(_)) => true
           case _ => false

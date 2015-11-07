@@ -17,12 +17,13 @@ trait TournamentDecider extends Decider[TournamentState, TournamentCommand, Tour
   def apply(s:TournamentState, cmd:TournamentCommand):TournamentError \/ Seq[TournamentEvent] = {
     s match {
       case EmptyTournamentState => cmd match { 
-        case StartTournament(players, matchKind) => 
+        case StartTournament(gamePlayers, matchKind) =>
+          val players = GamePlayers.getPlayers(gamePlayers)
           GameValidator.checkPlayersNumber(players) match {
             case Some(err) => -\/(TournamentGameError(err))
             case _ => 
               GameValidator.checkAllPlayersExists(playerById, players).leftMap(TournamentGameError(_)).map { players =>
-                Seq(TournamentStarted(players, matchKind))
+                Seq(TournamentStarted(gamePlayers, matchKind))
               }
           }
         case _ => -\/(TournamentNotStarted)
@@ -57,7 +58,7 @@ trait TournamentEvolver extends Evolver[TournamentState, TournamentEvent] {
     lazy val invalidStateEvent = new RuntimeException(s"invalid state event combination\nstate:$s\nevent:$event")
     s match {
       case EmptyTournamentState => event match {
-        case TournamentStarted(players, matchKind) => ActiveTournamentState(nextId, players.map(_.id), matchKind, Map.empty, Map.empty)
+        case TournamentStarted(players, matchKind) => ActiveTournamentState(nextId, players, matchKind, Map.empty, Map.empty)
         case _ => throw invalidStateEvent 
       }
       case ActiveTournamentState(id, players, kind, finished, currents) => event match {

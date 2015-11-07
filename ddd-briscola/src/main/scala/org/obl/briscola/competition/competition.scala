@@ -13,26 +13,32 @@ trait CompetitionDecider extends Decider[CompetitionState, CompetitionCommand, C
   
   def apply(s:CompetitionState, cmd:CompetitionCommand):CompetitionError \/ Seq[CompetitionEvent] = {
     (s -> cmd) match {
-      case (EmptyCompetition, CreateCompetition(issuer, plyrs, kind, deadLine)) =>
-        val players = plyrs + issuer
-        GameValidator.checkPlayersNumber(players) match {
+      case (EmptyCompetition, CreateCompetition(issuer, gmPlayers, kind, deadLine)) =>
+        val gamePlayers:GamePlayers = gmPlayers match {
+          case Players(players) => Players(players + issuer)
+          case _ => ???
+        }
+        val playersSet = GamePlayers.getPlayers(gamePlayers)
+        GameValidator.checkPlayersNumber(playersSet ) match {
           case Some(err) => -\/(CompetioBriscolaError(err))
-          case None => GameValidator.checkAllPlayersExists(playerById, players).map { players =>
+          case None => GameValidator.checkAllPlayersExists(playerById, playersSet).map { players =>
               val issr = players.find(_.id == issuer).get
-              Seq(CreatedCompetition(nextId, issr, Competition(players, kind, deadLine))) 
+              Seq(CreatedCompetition(nextId, issr, Competition(gamePlayers, kind, deadLine))) 
             }.leftMap(CompetioBriscolaError(_))
         }
       case (comp:OpenCompetition, AcceptCompetition(playerId)) =>
-        if (!comp.competition.players.exists(_.id == playerId)) {
-          -\/(CompetioBriscolaError(InvalidPlayer(playerId)))
-        } else {
+        val players = GamePlayers.getPlayers(comp.competition.players)
+        if (players.contains(playerId)) {
           \/-(Seq(CompetitionAccepted(playerId)))
+        } else {
+          -\/(CompetioBriscolaError(InvalidPlayer(playerId)))          
         }
       case (comp:OpenCompetition, DeclineCompetition(playerId, reason)) =>
-        if (!comp.competition.players.exists(_.id == playerId)) {
-          -\/(CompetioBriscolaError(InvalidPlayer(playerId)))
-        } else {
+        val players = GamePlayers.getPlayers(comp.competition.players)
+        if (players.contains(playerId)) {
           \/-(Seq(CompetitionDeclined(playerId, reason)))
+        } else {
+          -\/(CompetioBriscolaError(InvalidPlayer(playerId)))          
         }
         // CompetitionIsNotFullfilled
       case (EmptyCompetition, _) => -\/(CompetitionNotStarted)
@@ -48,16 +54,18 @@ trait CompetitionDecider extends Decider[CompetitionState, CompetitionCommand, C
 
 trait CompetitionEvolver extends Evolver[CompetitionState, CompetitionEvent] {
  
-  def isFullfilled(comp:Competition, players:Set[PlayerId]) = 
+  def isFullfilled(comp:Competition, players:Set[PlayerId]) = {
+    val compPlayers = GamePlayers.getPlayers(comp.players)
     comp.deadline match {
-      case CompetitionStartDeadline.AllPlayers => comp.players.map(_.id) == players
-      case CompetitionStartDeadline.OnPlayerCount(n) => players.size == n
+      case CompetitionStartDeadline.AllPlayers => compPlayers == players
+      case CompetitionStartDeadline.OnPlayerCount(n) => compPlayers.size == n
     }
+  }
 
   def isDropped(comp:Competition, decliningPlayers:Set[PlayerId]) = {
     comp.deadline match {
       case CompetitionStartDeadline.AllPlayers => decliningPlayers.nonEmpty
-      case CompetitionStartDeadline.OnPlayerCount(n) => (comp.players.size - decliningPlayers.size) < n
+      case CompetitionStartDeadline.OnPlayerCount(n) => (GamePlayers.getPlayers(comp.players).size - decliningPlayers.size) < n
     }
   }
   

@@ -74,7 +74,9 @@ class BriscolaAppImpl(
 
   competitionService.competitionsFullfilled.subscribe { sc =>
     
-    tournamentService.startTournament(sc.newState.acceptingPlayers, sc.newState.competition.kind)
+    val gamePlayers:GamePlayers = GamePlayers.filterPlayersByPlayerId(sc.newState.competition.players, pid => sc.newState.acceptingPlayers.contains(pid)) 
+    
+    tournamentService.startTournament(gamePlayers, sc.newState.competition.kind)
     
   }
   

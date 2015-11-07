@@ -5,7 +5,7 @@ import player._
 
 final case class CompetitionId(id:Long)
 
-final case class Competition(players:Set[Player], kind:MatchKind, deadline:CompetitionStartDeadline/*, FIXME"this functionality needs a timer" endTime:LocalDateTime */)
+final case class Competition(players:GamePlayers, kind:MatchKind, deadline:CompetitionStartDeadline/*, FIXME"this functionality needs a timer" endTime:LocalDateTime */)
 
 sealed trait MatchKind
 case object SingleMatch extends MatchKind

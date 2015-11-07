@@ -1,6 +1,6 @@
 package org.obl.briscola.tournament 
 
-import org.obl.briscola.player.PlayerId
+import org.obl.briscola.player._
 import org.obl.briscola.competition.MatchKind
 import org.obl.briscola.FinalGameState
 import org.obl.briscola.GameId
@@ -48,12 +48,12 @@ sealed trait TournamentStateResults {
   
 }
 
-final case class ActiveTournamentState(id:TournamentId, players:Set[PlayerId], kind:MatchKind, 
+final case class ActiveTournamentState(id:TournamentId, players:GamePlayers, kind:MatchKind, 
     finishedGames:Map[GameId, FinalGameState], currentGames:Map[GameId, ActiveGameState]) extends TournamentState with TournamentStateResults
     
-final case class CompletedTournamentState(id:TournamentId, players:Set[PlayerId], kind:MatchKind, 
+final case class CompletedTournamentState(id:TournamentId, players:GamePlayers, kind:MatchKind, 
     finishedGames:Map[GameId, FinalGameState], currentGames:Map[GameId, ActiveGameState]) extends TournamentState with TournamentStateResults
     
-final case class DroppedTournamentState(id:TournamentId, players:Set[PlayerId], kind:MatchKind, 
+final case class DroppedTournamentState(id:TournamentId, players:GamePlayers, kind:MatchKind, 
     finishedGames:Map[GameId, FinalGameState], currentGames:Map[GameId, ActiveGameState],
     dropReason:DropReason) extends TournamentState with TournamentStateResults

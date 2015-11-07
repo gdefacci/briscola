@@ -9,15 +9,16 @@ import org.obl.briscola.service._
 import org.obl.briscola.service.player.PlayerEvent
 import org.obl.briscola.player.Player
 
+import StateChangeFilter._
+import player._
+import competition._
+import org.obl.briscola.player.GamePlayers
+
 object StateChangeFilter {
   
   type StateChangeFilter[S,E,PS,PE] = PlayerId => PartialFunction[StateChange[S,E], Presentation.EventAndState[PE, PS]]
   
 }
-
-import StateChangeFilter._
-import player._
-import competition._
 
 class GamesStateChangeFilter(gameService: => BriscolaService, toPresentation: => GamePresentationAdapter) extends StateChangeFilter[GameState, BriscolaEvent, Presentation.GameState, Presentation.BriscolaEvent] {
   
@@ -53,7 +54,7 @@ class CompetitionsStateChangeFilter( competitionService: => CompetitionsService,
   }
   
   def isToSend(pid:PlayerId, e: ClientCompetitionEvent, s: ClientCompetitionState):Boolean =
-    s.competition.players.map(_.id).contains(pid) && nonSelfCompetitionEvent(e, pid) && !competitionService.isFullfilled(s.id) 
+    GamePlayers.getPlayers(s.competition.players).contains(pid) && nonSelfCompetitionEvent(e, pid) && !competitionService.isFullfilled(s.id) 
   
   def apply(pid:PlayerId) = {
     case StateChange(_, e: ClientCompetitionEvent, s: ClientCompetitionState) if isToSend(pid,e,s) => EventAndState(toPresentation(s.id, e, pid), toPresentation(s, Some(pid)))

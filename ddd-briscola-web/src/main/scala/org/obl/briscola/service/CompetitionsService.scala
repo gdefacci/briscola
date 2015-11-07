@@ -11,7 +11,7 @@ import org.obl.briscola.web.util.TStateChange
 
 trait CompetitionsService {
 
-  def createCompetition(issuer: PlayerId, players: Set[PlayerId], kind: MatchKind, deadLine: CompetitionStartDeadline): CompetitionError \/ CompetitionState
+  def createCompetition(issuer: PlayerId, players: GamePlayers, kind: MatchKind, deadLine: CompetitionStartDeadline): CompetitionError \/ CompetitionState
 
   def acceptCompetition(pid: PlayerId, cid: CompetitionId): Option[CompetitionError \/ CompetitionState]
 
@@ -37,7 +37,7 @@ trait BaseCompetitionsService extends BaseAggregateService[CompetitionId, Compet
     case _ => false 
   }
   
-  def createCompetition(issuer: PlayerId, players: Set[PlayerId], kind: MatchKind, deadLine: CompetitionStartDeadline): CompetitionError \/ CompetitionState =
+  def createCompetition(issuer: PlayerId, players: GamePlayers, kind: MatchKind, deadLine: CompetitionStartDeadline): CompetitionError \/ CompetitionState =
     runCommand(EmptyCompetition, CreateCompetition(issuer, players, kind, deadLine))
 
   def acceptCompetition(pid: PlayerId, cid: CompetitionId): Option[CompetitionError \/ CompetitionState] =

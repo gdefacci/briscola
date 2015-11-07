@@ -10,10 +10,10 @@ import org.obl.briscola.competition._
 import org.obl.briscola.service._
 import scalaz.{ -\/, \/, \/- }
 import org.obl.briscola.web.util.ServletRoutes
-
 import jsonEncoders._
 import jsonDecoders._
 import org.obl.briscola.web.util.Plan
+import org.obl.briscola.player.GamePlayers
 
 trait CompetitionRoutes extends ServletRoutes {
   def Competitions: org.obl.raz.Path
@@ -53,7 +53,7 @@ trait CompetitionPresentationAdapter {
   }
   def apply(comp: Competition, pid: Option[PlayerId]): Presentation.Competition = {
     Presentation.Competition(
-      comp.players.map(p => playerRoutes.PlayerById(p.id)),
+      GamePlayers.getPlayers(comp.players).map(p => playerRoutes.PlayerById(p)),
       apply(comp.kind),
       apply(comp.deadline))
   }
@@ -149,7 +149,7 @@ class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRo
         errOrComp match {
           case -\/(err) => InternalServerError(err.toString)
           case \/-(comp) => 
-            service.createCompetition(pid, comp.players.toSet, comp.kind, comp.deadline) match {
+            service.createCompetition(pid, org.obl.briscola.player.Players(comp.players.toSet), comp.kind, comp.deadline) match {
               case -\/(err) => InternalServerError(err.toString)
               case \/-(content:ClientCompetitionState) => Ok(responseBody( toPresentation(content, Some(pid))))
               case _ => NotFound()

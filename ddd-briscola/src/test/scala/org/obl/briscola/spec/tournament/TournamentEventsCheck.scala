@@ -17,6 +17,7 @@ object TournamentEventsCheck extends scala.App {
 
   implicit val aPlayerId = Arbitrary(Gen.oneOf(avaiablePlayers))
 
+  implicit val aGamePlayers = Arbitrary[GamePlayers]( for ( players <- Gen.listOf(Gen.oneOf(avaiablePlayers))) yield Players(players.toSet) )
   implicit val aCompetitionStartDeadline = Arbitrary(GenTree.tree[CompetitionStartDeadline])
   
   val aCommand = {
@@ -66,7 +67,7 @@ object TournamentEventsCheck extends scala.App {
       players <- Gen.listOf(Gen.oneOf(avaiablePlayers));
       mkind <- aMatchKind
     ) yield {
-      StartTournament(players.toSet, mkind)
+      StartTournament(Players(players.toSet), mkind)
     }
     
     val aSetTournamentGame = GenTree.tree[SetTournamentGame]

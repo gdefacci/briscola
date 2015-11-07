@@ -16,11 +16,11 @@ object Spec1 extends App with CompetitionSpec {
     val players = Set(player1)
 
     check(
-      When(CreateCompetition(player1, Set.empty, SingleMatch, CompetitionStartDeadline.AllPlayers)) expect
+      When(CreateCompetition(player1, Players(Set.empty), SingleMatch, CompetitionStartDeadline.AllPlayers)) expect
         ErrorIs(CompetioBriscolaError(TooFewPlayers(players, GameState.MIN_PLAYERS))))
 
     check(
-      When(CreateCompetition(player1, players, SingleMatch, CompetitionStartDeadline.AllPlayers)) expect
+      When(CreateCompetition(player1, Players(players), SingleMatch, CompetitionStartDeadline.AllPlayers)) expect
         ErrorIs(CompetioBriscolaError(TooFewPlayers(players, GameState.MIN_PLAYERS))))
 
   }
@@ -31,7 +31,7 @@ object Spec1 extends App with CompetitionSpec {
     val players = 2.to(GameState.MAX_PLAYERS + 1).map(PlayerId(_)).toSet
 
     check(
-      When(CreateCompetition(player1, players, SingleMatch, CompetitionStartDeadline.AllPlayers)) expect
+      When(CreateCompetition(player1, Players(players), SingleMatch, CompetitionStartDeadline.AllPlayers)) expect
         ErrorIs(CompetioBriscolaError(TooManyPlayers(players + player1, GameState.MAX_PLAYERS))))
 
   }
@@ -42,10 +42,10 @@ object Spec1 extends App with CompetitionSpec {
     val issuer = players.head
 
     check(
-      (When(CreateCompetition(issuer, players, SingleMatch, CompetitionStartDeadline.AllPlayers)) expect
+      (When(CreateCompetition(issuer, Players(players), SingleMatch, CompetitionStartDeadline.AllPlayers)) expect
         EventsThat("include only CreatedCompetition") {
           case Seq(CreatedCompetition(_, issuer1, Competition(players1, SingleMatch, CompetitionStartDeadline.AllPlayers))) =>
-            issuer == issuer1.id && players == players1.map(_.id)
+            issuer == issuer1.id && players == GamePlayers.getPlayers(players1)
           case x => false
         }).andThenOnNewState[OpenCompetition] { comp =>
           (When(AcceptCompetition(issuer))
@@ -66,10 +66,10 @@ object Spec1 extends App with CompetitionSpec {
     val issuer = players.head
 
     check(
-      (When(CreateCompetition(issuer, players, SingleMatch, CompetitionStartDeadline.AllPlayers)) expect
+      (When(CreateCompetition(issuer, Players(players), SingleMatch, CompetitionStartDeadline.AllPlayers)) expect
         EventsThat("include only CreatedCompetition") {
           case Seq(CreatedCompetition(_, issuer1, Competition(players1, SingleMatch, CompetitionStartDeadline.AllPlayers))) =>
-            issuer == issuer1.id && players == players1.map(_.id)
+            issuer == issuer1.id && players == GamePlayers.getPlayers(players1)
           case x => false
         }).andThenOnNewState[OpenCompetition] { comp =>
           (When(AcceptCompetition(issuer))

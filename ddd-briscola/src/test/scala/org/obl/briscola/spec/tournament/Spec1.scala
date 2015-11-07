@@ -15,10 +15,10 @@ object Spec1 extends App with TournamentSpec {
     val playersMax = 1.to(GameState.MAX_PLAYERS+1).map(id => PlayerId(id)).toSet
 
     check(
-      When(StartTournament(playersMin, SingleMatch)).expect(ErrorIs(TournamentGameError(TooFewPlayers(playersMin, GameState.MIN_PLAYERS))))
+      When(StartTournament(Players(playersMin), SingleMatch)).expect(ErrorIs(TournamentGameError(TooFewPlayers(playersMin, GameState.MIN_PLAYERS))))
     )
     check(
-      When(StartTournament(playersMax, SingleMatch)).expect(ErrorIs(TournamentGameError(TooManyPlayers(playersMax, GameState.MAX_PLAYERS))))
+      When(StartTournament(Players(playersMax), SingleMatch)).expect(ErrorIs(TournamentGameError(TooManyPlayers(playersMax, GameState.MAX_PLAYERS))))
     )
   }
   
@@ -28,12 +28,12 @@ object Spec1 extends App with TournamentSpec {
     val fgame = FinalGameState(GameId(1), Card(7, Seed.bastoni), Nil, None) 
     
     check(
-      When(StartTournament(players, SingleMatch)).expect(
+      When(StartTournament(Players(players), SingleMatch)).expect(
         EventsThat("contains a single TournamentStarted event") {
-          case Seq(TournamentStarted(pls1, SingleMatch)) => pls1.map(_.id) == players
+          case Seq(TournamentStarted(pls1, SingleMatch)) => GamePlayers.getPlayers(pls1) == players
           case _ => false
         } and StateThatIs[ActiveTournamentState]("is an empty active tournament") { st =>
-          st.currentGames.isEmpty && st.finishedGames.isEmpty && st.kind == SingleMatch && st.players == players
+          st.currentGames.isEmpty && st.finishedGames.isEmpty && st.kind == SingleMatch && GamePlayers.getPlayers(st.players) == players
         }    
       ).andThenOnNewState[ActiveTournamentState] { ns =>
         When(SetTournamentGame(game)).expect(

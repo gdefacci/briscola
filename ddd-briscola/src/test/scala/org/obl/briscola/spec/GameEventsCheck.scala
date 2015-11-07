@@ -7,8 +7,7 @@ import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Prop.{forAll, BooleanOperators}
 import org.cvogt.scalacheck.GenTree
 
-import org.obl.briscola.player.PlayerId
-import org.obl.briscola.player.Player
+import org.obl.briscola.player._
 import org.obl.ddd.Runner
 
 object GameEventsCheck extends scala.App {
@@ -23,6 +22,8 @@ object GameEventsCheck extends scala.App {
       num <- aValidCardNumber) yield {
     Card(num, seed)
   })
+  
+  implicit val aGamePlayers = Arbitrary[GamePlayers]( for ( players <- Gen.listOf(Gen.oneOf(avaiablePlayers))) yield Players(players.toSet) ) 
   
   val aCommand = GenTree.partialTree[BriscolaCommand]
   

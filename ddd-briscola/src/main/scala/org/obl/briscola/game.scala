@@ -39,7 +39,9 @@ trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, Bri
   
   def apply(s:GameState, cmd:BriscolaCommand):BriscolaError \/ Seq[BriscolaEvent] = {
     (s, cmd) match {
-      case (EmptyGameState, StartGame(players)) => {
+      case (EmptyGameState, StartGame(gamePlayers)) =>
+        
+        val players = GamePlayers.getPlayers(gamePlayers)
         GameValidator.checkPlayersNumber(players) match {
           case Some(err) => -\/(err)
           case None => GameValidator.checkAllPlayersExists(playerById, players) match {
@@ -54,34 +56,34 @@ trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, Bri
               \/-(Seq(GameStarted(ActiveGameState(nextId, deck.briscolaCard(players.size), deck, Nil, plyrs, None))))
           }
         }
-      }
-      case (EmptyGameState, _) => {
+      
+      case (EmptyGameState, _) => 
         -\/(GameNotStarted)
-      }
-      case (gm:ActiveGameState, PlayCard(pid, card)) if gm.currentPlayer.id == pid && gm.currentPlayer.cards.contains(card) => {
+        
+      case (gm:ActiveGameState, PlayCard(pid, card)) if gm.currentPlayer.id == pid && gm.currentPlayer.cards.contains(card) => 
         \/-(Seq(CardPlayed(pid, card)))
-      }
-      case (gm:ActiveGameState, PlayCard(pid, card)) if gm.currentPlayer.id == pid && !gm.currentPlayer.cards.contains(card) => {
+      
+      case (gm:ActiveGameState, PlayCard(pid, card)) if gm.currentPlayer.id == pid && !gm.currentPlayer.cards.contains(card) => 
         -\/(PlayerDoesNotOwnCard(pid, card, gm.currentPlayer.cards))
-      }
-      case (gm:ActiveGameState, PlayCard(pid, _)) if !(gm.players.map(_.id) contains pid) => {
+      
+      case (gm:ActiveGameState, PlayCard(pid, _)) if !(gm.players.map(_.id) contains pid) => 
         -\/(InvalidPlayer(pid))
-      }
-      case (gm:ActiveGameState, PlayCard(pid, _)) if gm.currentPlayer.id != pid => {
+      
+      case (gm:ActiveGameState, PlayCard(pid, _)) if gm.currentPlayer.id != pid => 
         -\/(InvalidTurn(pid, gm.currentPlayer.id))
-      }
-      case (_:ActiveGameState, StartGame(players)) => {
+      
+      case (_:ActiveGameState, StartGame(players)) => 
         -\/(GameAlreadyStarted)
-      }
-      case (_:ActiveGameState, PlayerDropGame(player, reason)) => {
+      
+      case (_:ActiveGameState, PlayerDropGame(player, reason)) => 
         \/-(Seq(GameDropped(PlayerLeft(player, reason))))
-      }
-      case (_:DroppedGameState, _) => {
+      
+      case (_:DroppedGameState, _) => 
         -\/(GameAlreadyDropped)
-      }
-      case (_:FinalGameState, _) => {
+      
+      case (_:FinalGameState, _) => 
         -\/(GameAlreadyFinished)
-      }
+      
     }
   }
   

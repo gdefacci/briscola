@@ -39,7 +39,7 @@ class ReplGame(players:Set[PlayerId]) {
   }
   
   def start() = {
-    pushCommand(StartGame(players)).leftMap(_.toString)
+    pushCommand(StartGame(Players(players))).leftMap(_.toString)
   }
   
   def isFinished = state match {

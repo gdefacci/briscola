@@ -15,10 +15,12 @@ object CompetitionEventsCheck extends scala.App {
 
   val avaiablePlayers = 1.to(3).map( id => PlayerId(id) )
   
-  implicit val aPlayerId = Arbitrary( Gen.oneOf(avaiablePlayers) )
+  implicit val aPlayerId = Arbitrary[PlayerId]( Gen.oneOf(avaiablePlayers) )
 
   implicit val aCompetitionStartDeadline = Arbitrary( Gen.oneOf[CompetitionStartDeadline](AllPlayers, OnPlayerCount(3)) )
   implicit val aMatchKind = Arbitrary( Gen.oneOf[MatchKind](SingleMatch, NumberOfGamesMatchKind(1)) )
+  implicit val aGamePlayers = Arbitrary[GamePlayers]( for ( players <- Gen.listOf(Gen.oneOf(avaiablePlayers))) yield Players(players.toSet) )  
+  
   val aCommand = GenTree.partialTree[CompetitionCommand]
   
   val commandsList = Gen.listOf(aCommand)

@@ -14,7 +14,7 @@ import org.obl.ddd.StateChange
 import org.obl.briscola.web.util.TStateChange
 
 trait BriscolaService {
-  def startGame(players: Set[PlayerId]): BriscolaError \/ GameState
+  def startGame(players: GamePlayers): BriscolaError \/ GameState
   def playCard(id: GameId, pid: PlayerId, card: Card): Option[(BriscolaError \/ GameState)]
 
   def gameById(id: GameId): Option[GameState]
@@ -39,7 +39,7 @@ trait BaseBriscolaService extends BaseAggregateService[GameId, GameState, Brisco
     case _ => false
   }
 
-  def startGame(players: Set[PlayerId]): BriscolaError \/ GameState =
+  def startGame(players: GamePlayers): BriscolaError \/ GameState =
     runCommand(EmptyGameState, StartGame(players))
 
   def playCard(id: GameId, pid: PlayerId, card: Card): Option[(BriscolaError \/ GameState)] =
