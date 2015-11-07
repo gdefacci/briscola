@@ -1,6 +1,7 @@
 package org.obl.briscola
 package web
 
+import org.obl.briscola.presentation
 import org.obl.raz.PathCodec
 import org.obl.briscola.player.PlayerId
 import org.http4s._
@@ -38,46 +39,46 @@ trait CompetitionPresentationAdapter {
   def playerRoutes: PlayerRoutes
   def competitionRoutes: CompetitionRoutes
 
-  def apply(comp: CompetitionStartDeadline): Presentation.CompetitionStartDeadline = {
+  def apply(comp: CompetitionStartDeadline): presentation.CompetitionStartDeadline = {
     comp match {
-      case CompetitionStartDeadline.AllPlayers => Presentation.AllPlayers
-      case CompetitionStartDeadline.OnPlayerCount(n) => Presentation.OnPlayerCount(n)
+      case CompetitionStartDeadline.AllPlayers => presentation.AllPlayers
+      case CompetitionStartDeadline.OnPlayerCount(n) => presentation.OnPlayerCount(n)
     } 
   }
-  def apply(comp: MatchKind): Presentation.MatchKind = {
+  def apply(comp: MatchKind): presentation.MatchKind = {
     comp match {
-      case SingleMatch => Presentation.SingleMatch
-      case NumberOfGamesMatchKind(n) => Presentation.NumberOfGamesMatchKind(n)
-      case TargetPointsMatchKind(n) => Presentation.TargetPointsMatchKind(n)
+      case SingleMatch => presentation.SingleMatch
+      case NumberOfGamesMatchKind(n) => presentation.NumberOfGamesMatchKind(n)
+      case TargetPointsMatchKind(n) => presentation.TargetPointsMatchKind(n)
     }
   }
-  def apply(comp: Competition, pid: Option[PlayerId]): Presentation.Competition = {
-    Presentation.Competition(
+  def apply(comp: Competition, pid: Option[PlayerId]): presentation.Competition = {
+    presentation.Competition(
       GamePlayers.getPlayers(comp.players).map(p => playerRoutes.PlayerById(p)),
       apply(comp.kind),
       apply(comp.deadline))
   }
   
-  def apply(cid:CompetitionId, comp: ClientCompetitionEvent, pid:PlayerId): Presentation.CompetitionEvent = comp match {
+  def apply(cid:CompetitionId, comp: ClientCompetitionEvent, pid:PlayerId): presentation.CompetitionEvent = comp match {
     case CreatedCompetition(id, issuer, comp) => 
-      Presentation.CreatedCompetition( playerRoutes.PlayerById(issuer.id), competitionRoutes.PlayerCompetitionById(id, pid) )
+      presentation.CreatedCompetition( playerRoutes.PlayerById(issuer.id), competitionRoutes.PlayerCompetitionById(id, pid) )
       
     case CompetitionAccepted(pid) => 
-      Presentation.CompetitionAccepted( playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid) )
+      presentation.CompetitionAccepted( playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid) )
       
     case CompetitionDeclined(pid, rsn) => 
-      Presentation.CompetitionDeclined( playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid), rsn )
+      presentation.CompetitionDeclined( playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid), rsn )
     
   }
   
-  def apply(comp: ClientCompetitionState, pid: Option[PlayerId]): Presentation.CompetitionState = {
+  def apply(comp: ClientCompetitionState, pid: Option[PlayerId]): presentation.CompetitionState = {
     val (competition, compKind, acceptingPlayers, decliningPlayers) = comp match {
-      case c: OpenCompetition => (Some(c.competition), Presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
-      case c: DroppedCompetition => (Some(c.competition), Presentation.CompetitionStateKind.dropped, c.acceptingPlayers, c.decliningPlayers)
-      case c: FullfilledCompetition => (Some(c.competition), Presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
+      case c: OpenCompetition => (Some(c.competition), presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
+      case c: DroppedCompetition => (Some(c.competition), presentation.CompetitionStateKind.dropped, c.acceptingPlayers, c.decliningPlayers)
+      case c: FullfilledCompetition => (Some(c.competition), presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
     }
 
-    Presentation.CompetitionState(
+    presentation.CompetitionState(
       competitionRoutes.CompetitionById(comp.id),
       competition.map(apply(_, pid)),
       compKind,
@@ -104,7 +105,7 @@ class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRo
   
   lazy val plan = HttpService {
     case GET -> routes.Competitions(_) =>
-      val content = Presentation.Collection(service.allCompetitions.collect(onlyClientCompetitionState).map(toPresentation(_, None)))
+      val content = presentation.Collection(service.allCompetitions.collect(onlyClientCompetitionState).map(toPresentation(_, None)))
       Ok(responseBody(content))
 
     case GET -> routes.CompetitionById(id) =>
@@ -145,7 +146,7 @@ class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRo
 
       
     case req @ POST -> routes.CreateCompetition(pid) =>
-      ParseBody[Presentation.Input.Competition](req) { errOrComp => 
+      ParseBody[presentation.Input.Competition](req) { errOrComp => 
         errOrComp match {
           case -\/(err) => InternalServerError(err.toString)
           case \/-(comp) => 

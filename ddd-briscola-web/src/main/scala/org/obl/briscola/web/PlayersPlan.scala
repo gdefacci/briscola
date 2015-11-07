@@ -7,7 +7,7 @@ import scalaz.{ -\/, \/, \/- }
 import org.obl.raz.PathCodec
 import org.obl.briscola.player.PlayerId
 import org.obl.briscola.player.Player
-import org.obl.briscola.web.Presentation.EventAndState
+import org.obl.briscola.presentation.EventAndState
 import org.http4s.server.websocket.WS
 import org.http4s.websocket.WebsocketBits
 import scalaz.stream.Process
@@ -49,16 +49,16 @@ trait PlayerPresentationAdapter {
   def playerWebSocketRoutes: PlayerWebSocketRoutes
   def competitionRoutes: CompetitionRoutes
 
-  def apply(pls: Iterable[Player]): Iterable[Presentation.Player] =
+  def apply(pls: Iterable[Player]): Iterable[presentation.Player] =
     pls.map(apply(_))
 
-  def apply(pl: Player) = Presentation.Player(routes.PlayerById(pl.id), pl.name,
+  def apply(pl: Player) = presentation.Player(routes.PlayerById(pl.id), pl.name,
     RazWsHelper.asWebSocket(playerWebSocketRoutes.PlayerById(pl.id)),
     competitionRoutes.CreateCompetition(pl.id))
 
-  def apply(pe: player.PlayerEvent): Presentation.PlayerEvent = pe match {
-    case player.PlayerLogOn(pid) => Presentation.PlayerLogOn(routes.PlayerById(pid))
-    case player.PlayerLogOff(pid) => Presentation.PlayerLogOff(routes.PlayerById(pid))
+  def apply(pe: player.PlayerEvent): presentation.PlayerEvent = pe match {
+    case player.PlayerLogOn(pid) => presentation.PlayerLogOn(routes.PlayerById(pid))
+    case player.PlayerLogOff(pid) => presentation.PlayerLogOff(routes.PlayerById(pid))
   }
 }
 
@@ -89,11 +89,11 @@ class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
       Ok("Hello world.")
 
     case GET -> routes.Players(_) =>
-      val content = Presentation.Collection(service.allPlayers.map(toPresentation(_)))
+      val content = presentation.Collection(service.allPlayers.map(toPresentation(_)))
       Ok(responseBody(content))
 
     case req @ POST -> routes.Players(_) =>
-      ParseBody[Presentation.Input.Player](req) { errOrPlayer =>
+      ParseBody[presentation.Input.Player](req) { errOrPlayer =>
         errOrPlayer match {
           case -\/(err) => BadRequest(err)
           case \/-(pl) =>
@@ -109,7 +109,7 @@ class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
       }
 
     case req @ POST -> routes.PlayerLogin(_) =>
-      ParseBody[Presentation.Input.Player](req) { errOrPlayer =>
+      ParseBody[presentation.Input.Player](req) { errOrPlayer =>
         errOrPlayer match {
           case -\/(err) => BadRequest(err)
           case \/-(pl) =>

@@ -4,7 +4,7 @@ package web
 import org.obl.ddd.StateChange
 import argonaut.EncodeJson
 import org.obl.briscola.player.PlayerId
-import Presentation.EventAndState
+import presentation.EventAndState
 import org.obl.briscola.service._
 import org.obl.briscola.service.player.PlayerEvent
 import org.obl.briscola.player.Player
@@ -16,11 +16,11 @@ import org.obl.briscola.player.GamePlayers
 
 object StateChangeFilter {
   
-  type StateChangeFilter[S,E,PS,PE] = PlayerId => PartialFunction[StateChange[S,E], Presentation.EventAndState[PE, PS]]
+  type StateChangeFilter[S,E,PS,PE] = PlayerId => PartialFunction[StateChange[S,E], presentation.EventAndState[PE, PS]]
   
 }
 
-class GamesStateChangeFilter(gameService: => BriscolaService, toPresentation: => GamePresentationAdapter) extends StateChangeFilter[GameState, BriscolaEvent, Presentation.GameState, Presentation.BriscolaEvent] {
+class GamesStateChangeFilter(gameService: => BriscolaService, toPresentation: => GamePresentationAdapter) extends StateChangeFilter[GameState, BriscolaEvent, presentation.GameState, presentation.BriscolaEvent] {
   
   def apply(pid:PlayerId) = {
     case StateChange(_, ev, state @ ActiveGameState(id,_,_,_,_,_)) if state.players.map(_.id).contains(pid) && !gameService.isFinished(id) =>
@@ -31,7 +31,7 @@ class GamesStateChangeFilter(gameService: => BriscolaService, toPresentation: =>
   
 }
 
-class PlayersStateChangeFilter(toPresentation: => PlayerPresentationAdapter) extends StateChangeFilter[Iterable[Player], PlayerEvent, Iterable[Presentation.Player], Presentation.PlayerEvent] {
+class PlayersStateChangeFilter(toPresentation: => PlayerPresentationAdapter) extends StateChangeFilter[Iterable[Player], PlayerEvent, Iterable[presentation.Player], presentation.PlayerEvent] {
   
   def apply(pid:PlayerId) = {
     case StateChange(_, e @ PlayerLogOff(id), s) if id != pid=> 
@@ -42,7 +42,7 @@ class PlayersStateChangeFilter(toPresentation: => PlayerPresentationAdapter) ext
   
 }
 
-class CompetitionsStateChangeFilter( competitionService: => CompetitionsService, toPresentation: => CompetitionPresentationAdapter) extends StateChangeFilter[CompetitionState, CompetitionEvent, Presentation.CompetitionState, Presentation.CompetitionEvent] {
+class CompetitionsStateChangeFilter( competitionService: => CompetitionsService, toPresentation: => CompetitionPresentationAdapter) extends StateChangeFilter[CompetitionState, CompetitionEvent, presentation.CompetitionState, presentation.CompetitionEvent] {
 
   def nonSelfCompetitionEvent(event:CompetitionEvent, pid:PlayerId):Boolean = { 
     event match {

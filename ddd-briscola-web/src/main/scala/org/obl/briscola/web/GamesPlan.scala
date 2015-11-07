@@ -30,36 +30,36 @@ trait GamePresentationAdapter {
   def gameRoutes: GameRoutes
   def playerRoutes: PlayerRoutes
 
-  def apply(card:Card):Presentation.Card = 
-    Presentation.Card(card.number, card.seed, card.points)
+  def apply(card:Card):presentation.Card = 
+    presentation.Card(card.number, card.seed, card.points)
   
-  def apply(ps: PlayerState): Presentation.PlayerState =
-    Presentation.PlayerState(playerRoutes.PlayerById(ps.id), ps.cards.map(apply(_)), Presentation.Score(ps.score.cards.map( c => apply(c))) )
+  def apply(ps: PlayerState): presentation.PlayerState =
+    presentation.PlayerState(playerRoutes.PlayerById(ps.id), ps.cards.map(apply(_)), presentation.Score(ps.score.cards.map( c => apply(c))) )
 
-  def apply(ps: PlayerFinalState): Presentation.PlayerFinalState =
-    Presentation.PlayerFinalState(playerRoutes.PlayerById(ps.id), ps.points, Presentation.Score(ps.score.cards.map(apply(_))) )
+  def apply(ps: PlayerFinalState): presentation.PlayerFinalState =
+    presentation.PlayerFinalState(playerRoutes.PlayerById(ps.id), ps.points, presentation.Score(ps.score.cards.map(apply(_))) )
 
-  def apply(ps: PlayerLeft): Presentation.PlayerLeft =
-    Presentation.PlayerLeft(playerRoutes.PlayerById(ps.player), ps.reason)
+  def apply(ps: PlayerLeft): presentation.PlayerLeft =
+    presentation.PlayerLeft(playerRoutes.PlayerById(ps.player), ps.reason)
   
-  def apply(ps: DropReason): Presentation.DropReason = ps match {
+  def apply(ps: DropReason): presentation.DropReason = ps match {
     case pl:PlayerLeft => apply(pl)
   }
     
     
-  def apply(gid:GameId, e: BriscolaEvent, pid:PlayerId): Presentation.BriscolaEvent = e match {
-    case GameStarted(gm) => Presentation.GameStarted(apply(gm, Some(pid)))
-    case GameDropped(dropReason) => Presentation.GameDropped(gameRoutes.GameById(gid), apply(dropReason) )
-    case CardPlayed(pid, crd) => Presentation.CardPlayed(
+  def apply(gid:GameId, e: BriscolaEvent, pid:PlayerId): presentation.BriscolaEvent = e match {
+    case GameStarted(gm) => presentation.GameStarted(apply(gm, Some(pid)))
+    case GameDropped(dropReason) => presentation.GameDropped(gameRoutes.GameById(gid), apply(dropReason) )
+    case CardPlayed(pid, crd) => presentation.CardPlayed(
       gameRoutes.GameById(gid),
       playerRoutes.PlayerById(pid),
       apply(crd))
   }
 
-  def apply(gm: ActiveGameState, player: Option[PlayerId]): Presentation.ActiveGameState =
-    Presentation.ActiveGameState(
+  def apply(gm: ActiveGameState, player: Option[PlayerId]): presentation.ActiveGameState =
+    presentation.ActiveGameState(
       gameRoutes.GameById(gm.id),
-      apply(gm.briscolaCard), gm.moves.map(m => Presentation.Move(playerRoutes.PlayerById(m.player.id), apply(m.card))),
+      apply(gm.briscolaCard), gm.moves.map(m => presentation.Move(playerRoutes.PlayerById(m.player.id), apply(m.card))),
       gm.nextPlayers.map(p => playerRoutes.PlayerById(p.id)),
       playerRoutes.PlayerById(gm.currentPlayer.id),
       gm.isLastHandTurn, gm.isLastGameTurn,
@@ -67,22 +67,22 @@ trait GamePresentationAdapter {
       player.map(pid => gameRoutes.Player(gm.id, pid)),
       gm.deckCardsNumber)
 
-  def apply(gm: DroppedGameState): Presentation.DroppedGameState =
-    Presentation.DroppedGameState(
+  def apply(gm: DroppedGameState): presentation.DroppedGameState =
+    presentation.DroppedGameState(
       gameRoutes.GameById(gm.id),
-      apply(gm.briscolaCard), gm.moves.map(m => Presentation.Move(playerRoutes.PlayerById(m.player.id), apply(m.card))),
+      apply(gm.briscolaCard), gm.moves.map(m => presentation.Move(playerRoutes.PlayerById(m.player.id), apply(m.card))),
       gm.nextPlayers.map(p => playerRoutes.PlayerById(p.id)),
       apply(gm.dropReason))
     
       
-  def apply(gm: GameState): Presentation.GameState = apply(gm, None)
+  def apply(gm: GameState): presentation.GameState = apply(gm, None)
 
-  def apply(gm: GameState, player: Option[PlayerId]): Presentation.GameState = gm match {
-    case EmptyGameState => Presentation.EmptyGameState
+  def apply(gm: GameState, player: Option[PlayerId]): presentation.GameState = gm match {
+    case EmptyGameState => presentation.EmptyGameState
     case gm: ActiveGameState => apply(gm, player)
     case gm: DroppedGameState => apply(gm)
     case gm: FinalGameState =>
-      Presentation.FinalGameState(
+      presentation.FinalGameState(
         gameRoutes.GameById(gm.id),
         apply(gm.briscolaCard),
         gm.playersOrderByPoints.map(apply(_)),
@@ -103,7 +103,7 @@ class GamesPlan(_routes: => GameRoutes, service: => BriscolaService, toPresentat
   lazy val plan = HttpService {
 
     case GET -> routes.Games(_) =>
-      val content = Presentation.Collection( service.allGames.map(toPresentation(_)) )
+      val content = presentation.Collection( service.allGames.map(toPresentation(_)) )
       Ok(responseBody(content))
 
     case GET -> routes.GameById(id) =>

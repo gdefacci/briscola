@@ -1,5 +1,6 @@
 package org.obl.briscola.web
 
+import org.obl.briscola.presentation
 import org.obl.raz.BasePath
 import org.obl.raz.BasePosition
 import org.obl.raz.SegmentPosition
@@ -27,7 +28,7 @@ class BriscolaWebApp(routes:AppRoutes, app:BriscolaApp) {
   lazy val competitionsPlan = new CompetitionsPlan(routes.competitionRoutes, routes.playerRoutes, app.competitionService, competitionPresentationAdapter) 
   
   lazy val siteMap = 
-    Presentation.SiteMap(routes.playerRoutes.Players, routes.playerRoutes.PlayerLogin)
+    presentation.SiteMap(routes.playerRoutes.Players, routes.playerRoutes.PlayerLogin)
   
   lazy val siteMapPlan = new SiteMapPlan(routes.siteMapRoutes, siteMap) 
   

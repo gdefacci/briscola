@@ -2,7 +2,7 @@ package org.obl.briscola
 package web
 
 import org.obl.briscola.player.PlayerId
-import org.obl.briscola.web.Presentation.EventAndState
+import org.obl.briscola.presentation.EventAndState
 import org.obl.briscola.web.StateChangeFilter.StateChangeFilter
 import org.obl.briscola.web.util.ArgonautEncodeHelper.responseBody
 import org.obl.briscola.web.util.UrlParseUtil

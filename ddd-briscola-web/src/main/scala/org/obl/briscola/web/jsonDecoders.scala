@@ -12,17 +12,18 @@ import org.obl.briscola.competition.TargetPointsMatchKind
 import org.obl.briscola.player.PlayerId
 import org.obl.briscola.web.util.ArgonautHelper.enumDecoder
 import org.obl.briscola.web.util.ArgonautHelper.pathDecoder
+import org.obl.briscola.presentation
 
 import argonaut.DecodeJson
 import argonaut.DecodeResult
 
 object jsonDecoders {
   
-  implicit val playerDecoder = DecodeJson[Presentation.Input.Player] { j =>
+  implicit val playerDecoder = DecodeJson[presentation.Input.Player] { j =>
     for (
       name <- (j --\ "name").as[String];
       psw <- (j --\ "password").as[String]
-    ) yield Presentation.Input.Player(name, psw)
+    ) yield presentation.Input.Player(name, psw)
   }
 
   implicit val seedDecoder = enumDecoder(Seed) 
@@ -85,13 +86,13 @@ object jsonDecoders {
     }
 
     implicit lazy val competitionEncoder = {
-      DecodeJson[Presentation.Input.Competition] { j =>
+      DecodeJson[presentation.Input.Competition] { j =>
         for (
           players <- (j --\ "players").as[Seq[PlayerId]];
           kind <- (j --\ "kind").as[Option[MatchKind]];
           deadline <- (j --\ "deadline").as[Option[CompetitionStartDeadline]]
         ) yield {
-          Presentation.Input.Competition(players, kind.getOrElse(SingleMatch), deadline.getOrElse(AllPlayers))
+          presentation.Input.Competition(players, kind.getOrElse(SingleMatch), deadline.getOrElse(AllPlayers))
         }
       }
 
