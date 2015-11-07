@@ -35,7 +35,7 @@ trait BaseBriscolaService extends BaseAggregateService[GameId, GameState, Brisco
   def aggregateId(gm: GameState) = GameState.id(gm)
 
   def isFinished(gameId: GameId): Boolean = repository.get(gameId) match {
-    case Some(FinalGameState(_, _, _)) => true
+    case Some(FinalGameState(_, _, _, _)) => true
     case _ => false
   }
 
@@ -53,11 +53,11 @@ trait BaseBriscolaService extends BaseAggregateService[GameId, GameState, Brisco
 
   lazy val finishedGames:Observable[TStateChange[ActiveGameState, BriscolaEvent, FinalGameState]] =
     changes.collect {
-      case StateChange(sa @ ActiveGameState(id1,_,_,_,_),e, sb @ FinalGameState(_,_,_)) => TStateChange(sa,e,sb)
+      case StateChange(sa @ ActiveGameState(id1,_,_,_,_,_),e, sb @ FinalGameState(_,_,_,_)) => TStateChange(sa,e,sb)
     }
   
   lazy val droppedGames:Observable[TStateChange[ActiveGameState, BriscolaEvent, DroppedGameState]] =
     changes.collect {
-      case StateChange(sa @ ActiveGameState(id1,_,_,_,_),e, sb @ DroppedGameState(_,_,_,_,_,_)) => TStateChange(sa,e,sb)
+      case StateChange(sa @ ActiveGameState(id1,_,_,_,_,_),e, sb @ DroppedGameState(_,_,_,_,_,_,_)) => TStateChange(sa,e,sb)
     }
 }

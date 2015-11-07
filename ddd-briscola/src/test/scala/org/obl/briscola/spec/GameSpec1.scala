@@ -136,8 +136,8 @@ object GameSpec1 extends App with BriscolaSpec {
     val players = Set(pid1, pid2)
     val deck = Deck(Seq(Card(7, Seed.coppe), Card(8, Seed.coppe)))
     
-    val state = ActiveGameState(gid, Card(1, Seed.coppe), deck, Seq(Move(PlayerState(pid1, Set(Card(7, Seed.denari), Card(8, Seed.denari)), PlayerScore.empty), Card(2, Seed.coppe))), 
-        Seq(PlayerState(pid2, Set(Card(7, Seed.spade), Card(8, Seed.spade), Card(9, Seed.spade)), PlayerScore.empty) ))
+    val state = ActiveGameState(gid, Card(1, Seed.coppe), deck, Seq(Move(PlayerState(pid1, Set(Card(7, Seed.denari), Card(8, Seed.denari)), Score.empty), Card(2, Seed.coppe))), 
+        Seq(PlayerState(pid2, Set(Card(7, Seed.spade), Card(8, Seed.spade), Card(9, Seed.spade)), Score.empty) ), None )
     
       check( OnState(state) and When(PlayCard(pid2, Card(7, Seed.spade))) expect( EventsAre(CardPlayed(pid2, Card(7, Seed.spade)) ) )    
     )
@@ -149,17 +149,20 @@ object GameSpec1 extends App with BriscolaSpec {
     val gid = GameId(1)
     val players = Set(pid1, pid2)
     
-    val state = ActiveGameState(gid, Card(1, Seed.coppe), Deck.empty, Seq(Move(PlayerState(pid1, Set.empty, PlayerScore.empty), Card(2, Seed.coppe))), 
-        Seq(PlayerState(pid2, Set(Card(7, Seed.spade)), PlayerScore.empty) ))
+    val state = ActiveGameState(gid, Card(1, Seed.coppe), Deck.empty, Seq(Move(PlayerState(pid1, Set.empty, Score.empty), Card(2, Seed.coppe))), 
+        Seq(PlayerState(pid2, Set(Card(7, Seed.spade)), Score.empty) ), None)
     
       check( 
           OnState(state) and When(PlayCard(pid2, Card(7, Seed.spade))) expect( 
             EventsAre(CardPlayed(pid2, Card(7, Seed.spade)) ) and
             StateIs(FinalGameState(gid, Card(1, Seed.coppe), Seq(
-                PlayerFinalState(pid1, 0, PlayerScore(Set(Card(7, Seed.spade), Card(2, Seed.coppe))) ),
-                PlayerFinalState(pid2, 0, PlayerScore.empty 
-                )))) and
-            StateThatIs[FinalGameState]("player 1 is the winner")( s => s.winner.id == pid1 )
+                PlayerFinalState(pid1, 0, Score(Set(Card(7, Seed.spade), Card(2, Seed.coppe))) ),
+                PlayerFinalState(pid2, 0, Score.empty 
+                )), None)) and
+            StateThatIs[FinalGameState]("player 1 is the winner")( s => {
+              val winnner = s.winner
+              s.winner.id == pid1
+            } )
           )    
       )
   }

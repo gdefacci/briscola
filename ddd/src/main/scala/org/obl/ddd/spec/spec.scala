@@ -46,25 +46,36 @@ sealed trait FailedExpectation[S <: State, E <: Event, Err <: DomainError] {
 
 final case class CheckResult[S <: State, E <: Event, Err <: DomainError](currentState: Err \/ (Seq[E], S), results:Seq[FailedExpectation[S,E,Err] \/ SuccessfullExpectation], sub:Seq[CheckResult[S,E,Err]])
 
-class PrintlnReporter[S <: State, E <: Event, Err <: DomainError] extends (CheckResult[S,E,Err] => Unit) {
+class PrintlnReporter[S <: State, E <: Event, Err <: DomainError](verbose:Boolean = false) extends (CheckResult[S,E,Err] => Unit) {
   
   def apply(r:CheckResult[S,E,Err]) = {
-    apply("", r, "")
+    val res = apply("", r, "")
+    if (res) {
+      println("done")
+    } else {
+      println("\n\n\n!!! tests failed")
+    }
+    
   }
   
-  private def apply(indent:String, d:Description):String = d match {
+  private def indentedDescription(indent:String, d:Description):String = d match {
     case DescriptionImpl(txt) => s"${indent}$txt"
-    case DescriptionSeq(descs) => descs.map(di => apply(indent, di)).mkString("\n")
+    case DescriptionSeq(descs) => descs.map(di => indentedDescription(indent, di)).mkString("\n")
   }
   
-  private def apply(indent:String, r:CheckResult[S,E,Err], prefix:String):Unit = {
-    println(
-      r.results.map {
-        case \/-(exp) => s"${indent}${prefix}Success:\n${apply(indent, exp.description)}"
-        case -\/(exp) => s"${indent}${prefix}!!!!!! Error:\n${apply(indent, exp.description)}"
-      }.mkString("\n")
-    )
-    r.sub.foreach(apply(indent+"  ",_,"And after "))
+  private def apply(indent: => String, r:CheckResult[S,E,Err], prefix: => String):Boolean = {
+    val txts = r.results.flatMap {
+      case \/-(exp) => if (verbose) Seq(s"${indent}${prefix}Success:\n${indentedDescription(indent, exp.description)}") else Nil
+      case -\/(exp) => Seq(s"${indent}${prefix}!!!!!! Error:\n${indentedDescription(indent, exp.description)}")
+    }
+    if (txts.nonEmpty) {
+      println(txts.mkString("\n"))
+    }
+    val root = r.results.forall {
+      case \/-(exp) => true
+      case -\/(exp) => false
+    }
+    root & r.sub.forall(apply(indent+"  ",_,"And after "))
   }
 }
 

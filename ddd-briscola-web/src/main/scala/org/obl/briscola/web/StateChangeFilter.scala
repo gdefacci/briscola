@@ -22,9 +22,9 @@ import competition._
 class GamesStateChangeFilter(gameService: => BriscolaService, toPresentation: => GamePresentationAdapter) extends StateChangeFilter[GameState, BriscolaEvent, Presentation.GameState, Presentation.BriscolaEvent] {
   
   def apply(pid:PlayerId) = {
-    case StateChange(_, ev, state @ ActiveGameState(id,_,_,_,_)) if state.players.map(_.id).contains(pid) && !gameService.isFinished(id) =>
+    case StateChange(_, ev, state @ ActiveGameState(id,_,_,_,_,_)) if state.players.map(_.id).contains(pid) && !gameService.isFinished(id) =>
       EventAndState(toPresentation(id, ev, pid), toPresentation(state, Some(pid)))
-    case StateChange(_, ev, state @ FinalGameState(id,_,_)) if state.players.map(_.id).contains(pid)  =>
+    case StateChange(_, ev, state @ FinalGameState(id,_,_,_)) if state.players.map(_.id).contains(pid)  =>
       EventAndState(toPresentation(id, ev, pid), toPresentation(state, Some(pid)))
   }
   

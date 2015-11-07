@@ -41,7 +41,7 @@ trait BaseTournamentService extends BaseAggregateService[TournamentId, Tournamen
       case -\/(gmErr) =>
         -\/(TournamentGameError(gmErr))
 
-      case \/-(game @ ActiveGameState(gid, _, _, _, _)) =>
+      case \/-(game @ ActiveGameState(gid, _, _, _, _,_)) =>
         val res = runCommand(ts, SetTournamentGame(game))
         val tsId = ts.id
         res.foreach { 
@@ -65,10 +65,10 @@ trait BaseTournamentService extends BaseAggregateService[TournamentId, Tournamen
       case \/-(EmptyGameState) =>
         -\/(TournamentGameError(GameNotStarted))
 
-      case \/-(DroppedGameState(_, _, _, _, _, _)) =>
+      case \/-(DroppedGameState(_, _, _, _, _, _, _)) =>
         -\/(TournamentGameError(GameAlreadyDropped))
 
-      case \/-(FinalGameState(_, _, _)) =>
+      case \/-(FinalGameState(_, _, _, _)) =>
         -\/(TournamentGameError(GameAlreadyFinished))
 
     }

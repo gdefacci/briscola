@@ -48,10 +48,10 @@ trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, Bri
               val (deck, plyrs) = players.foldLeft(Deck.initial -> Seq.empty[PlayerState]) { (acc, player) =>
                 val (deck, currPlayers) = acc
                 val (cards, newDeck) = deck.takeCards(3)
-                newDeck -> (currPlayers ++ Seq(PlayerState(player.id, cards, PlayerScore.empty)))
+                newDeck -> (currPlayers ++ Seq(PlayerState(player.id, cards, Score.empty)))
               }
               
-              \/-(Seq(GameStarted(ActiveGameState(nextId, deck.briscolaCard(players.size), deck, Nil, plyrs))))
+              \/-(Seq(GameStarted(ActiveGameState(nextId, deck.briscolaCard(players.size), deck, Nil, plyrs, None))))
           }
         }
       }
@@ -104,7 +104,7 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
       val (mv, idx) = p
       val newIndex = if (idx < indexOfWinner) len + idx - indexOfWinner else idx - indexOfWinner
       val wonCards = if (idx == indexOfWinner) winnerCards else Nil
-      newIndex -> PlayerState(mv.player.id, mv.player.cards.filter(_!=mv.card), PlayerScore(mv.player.score.cards ++ wonCards) )
+      newIndex -> PlayerState(mv.player.id, mv.player.cards.filter(_!=mv.card), mv.player.score.add(wonCards)) 
     }
     idxStates.sortBy(_._1).map(_._2).foldLeft(deck -> Seq.empty[PlayerState]) { (acc, playerState) =>
       val (deck, states) = acc
@@ -118,7 +118,7 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
       case (EmptyGameState, GameStarted(state)) => 
         state
         
-      case (gm @ ActiveGameState(id, briscolaCard, deck, moves, nextPlayers), CardPlayed(cardPlayerId, card)) =>
+      case (gm @ ActiveGameState(id, briscolaCard, deck, moves, nextPlayers, team), CardPlayed(cardPlayerId, card)) =>
         val newMoves = gm.moves ++ Seq(Move(gm.currentPlayer.copy(cards = gm.currentPlayer.cards.filter(_ != card)), card))
         if (gm.isLastHandTurn) {
           
@@ -126,7 +126,7 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
           
           if (gm.isLastGameTurn) {
             val nsts = newPlayersState.map(s => PlayerFinalState(s.id, s.score.cards.toSeq.map(_.points).sum, s.score ))
-            FinalGameState(gm.id, gm.briscolaCard, nsts) 
+            FinalGameState(gm.id, gm.briscolaCard, nsts, team) 
           } else {
             gm.copy(deck = newDeck, moves = Nil, nextPlayers = newPlayersState)
           }
@@ -135,8 +135,8 @@ trait GameEvolver extends Evolver[GameState, BriscolaEvent] {
           gm.copy(moves = newMoves, nextPlayers = gm.nextPlayers.tail)
         }
         
-      case (ActiveGameState(id, briscolaCard, deck, moves, nextPlayers), GameDropped(reason))  =>
-        DroppedGameState(id, briscolaCard, deck, moves, nextPlayers, reason)
+      case (ActiveGameState(id, briscolaCard, deck, moves, nextPlayers, team), GameDropped(reason))  =>
+        DroppedGameState(id, briscolaCard, deck, moves, nextPlayers, reason, team)
         
       case (s, cmd) => 
         throw new RuntimeException(s"forbidden condition state:$s event:$event")

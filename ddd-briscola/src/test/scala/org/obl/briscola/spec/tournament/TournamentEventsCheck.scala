@@ -34,14 +34,14 @@ object TournamentEventsCheck extends scala.App {
 
     val aGameId = Gen.oneOf( 1.to(10).map( GameId(_) ) )
 
-    implicit val aPlayerScore = Arbitrary(for ( cards <- Gen.listOf(aCardGen) ) yield (PlayerScore(cards.toSet):Score))
+    implicit val aPlayerScore = Arbitrary(for ( cards <- Gen.listOf(aCardGen) ) yield (Score(cards.toSet):Score))
     
     implicit val anActiveGameState = Arbitrary(for (
       gameId <- aGameId;
       briscolaCard <- aCardGen;
       nextPlayers <- Gen.listOfN(2, GenTree.tree[PlayerState])
     ) yield {
-      ActiveGameState(gameId, briscolaCard, Deck.initial, Nil, nextPlayers)
+      ActiveGameState(gameId, briscolaCard, Deck.initial, Nil, nextPlayers, None)
     })
     
     implicit val aFinalGameState = Arbitrary(for (
@@ -49,7 +49,7 @@ object TournamentEventsCheck extends scala.App {
       briscolaCard <- aCardGen;
       nextPlayers <- Gen.listOfN(2, GenTree.tree[PlayerFinalState])
     ) yield {
-      FinalGameState(gameId, briscolaCard, nextPlayers)
+      FinalGameState(gameId, briscolaCard, nextPlayers, None)
     })
     
     implicit val aDroppedGameState = Arbitrary(for (
@@ -58,7 +58,7 @@ object TournamentEventsCheck extends scala.App {
       nextPlayers <- Gen.listOfN(2, GenTree.tree[PlayerState]);
       dropReason <- GenTree.tree[PlayerLeft]
     ) yield {
-      DroppedGameState(gameId, briscolaCard, Deck.initial, Nil, nextPlayers, dropReason)
+      DroppedGameState(gameId, briscolaCard, Deck.initial, Nil, nextPlayers, dropReason, None)
     })
   
     val aMatchKind = Gen.oneOf[MatchKind](SingleMatch, NumberOfGamesMatchKind(1))

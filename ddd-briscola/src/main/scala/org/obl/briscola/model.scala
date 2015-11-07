@@ -67,8 +67,19 @@ sealed trait GameState extends State
 
 final case class GameId(id:Long)
 
-case object EmptyGameState extends GameState 
-final case class ActiveGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState]) extends GameState {
+case class GameTeams(teams:Seq[TeamGameState])
+case class TeamGameState(team:TeamId, score:Set[Card])
+
+case object EmptyGameState extends GameState
+
+sealed trait GameStateTeamMixin {
+  def teams:Option[Teams]
+  
+  def teamById(teamId:TeamId) = teams.flatMap( _.teams.find( team => team.id == teamId) )
+}
+
+final case class ActiveGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState], teams:Option[Teams]) 
+  extends GameState with GameStateTeamMixin {
   
   assert(nextPlayers.nonEmpty)
 
@@ -87,27 +98,46 @@ final case class ActiveGameState(id:GameId, briscolaCard:Card, deck: Deck, moves
 sealed trait DropReason
 final case class PlayerLeft(player:PlayerId, reason:Option[String]) extends DropReason
 
-final case class DroppedGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState], dropReason:DropReason) extends GameState 
+final case class DroppedGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState], dropReason:DropReason, teams:Option[Teams]) 
+  extends GameState with GameStateTeamMixin 
 
-final case class FinalGameState(id:GameId, briscolaCard:Card, players:Seq[PlayerFinalState]) extends GameState {
+final case class FinalGameState(id:GameId, briscolaCard:Card, players:Seq[PlayerFinalState], teams:Option[Teams]) extends GameState with GameStateTeamMixin {
   
-  lazy val playersOrderByPoints = players.toSeq.sortWith { (ps1, ps2) =>
-    ps1.points > ps2.points || (ps1.points == ps2.points && ps1.score.cards.size > ps2.score.cards.size)
-  }
+  lazy val playersOrderByPoints = players.sortBy(_.score) 
   
   lazy val winner = playersOrderByPoints.head
   
 } 
 
-final case class Move(player: PlayerState, card: Card)
-
-sealed trait Score {
-  def cards:Set[Card]
-}
-final case class PlayerScore(cards:Set[Card]) extends Score
-object PlayerScore {
-  val empty = PlayerScore(Set.empty)
-}
-
 final case class PlayerState(id: PlayerId, cards: Set[Card], score: Score)
 final case class PlayerFinalState(id: PlayerId, points:Int, score: Score)
+
+final case class Move(player: PlayerState, card: Card)
+
+private object comparison {
+	val LT = -1
+	val EQ = 0
+  val GT = 1
+} 
+
+final case class Score(cards:Set[Card]) extends Ordered[Score] {
+  lazy val points = cards.map(_.points).sum
+  
+  lazy val numberOfCards = cards.size
+  
+  def add(score:Score):Score = add(score.cards)
+  def add(cards:Iterable[Card]) = Score(this.cards ++ cards)
+  
+  def compare(that: Score): Int = 
+    if (points > that.points) comparison.LT
+    else if (points == that.points) {
+      if (numberOfCards > that.numberOfCards) comparison.LT
+      else if (numberOfCards < that.numberOfCards) comparison.GT
+      else comparison.EQ
+    } else comparison.GT
+  
+} 
+
+object Score {
+  val empty = Score(Set.empty)
+}
