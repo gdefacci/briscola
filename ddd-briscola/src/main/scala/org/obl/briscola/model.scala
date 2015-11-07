@@ -67,15 +67,12 @@ sealed trait GameState extends State
 
 final case class GameId(id:Long)
 
-case class GameTeams(teams:Seq[TeamGameState])
-case class TeamGameState(team:TeamId, score:Set[Card])
-
 case object EmptyGameState extends GameState
 
 sealed trait GameStateTeamMixin {
   def teams:Option[Teams]
   
-  def teamById(teamId:TeamId) = teams.flatMap( _.teams.find( team => team.id == teamId) )
+  def teamByName(teamName:String) = teams.flatMap( _.teams.find( team => team.name == teamName) )
 }
 
 final case class ActiveGameState(id:GameId, briscolaCard:Card, deck: Deck, moves: Seq[Move], nextPlayers: Seq[PlayerState], teams:Option[Teams]) 

@@ -5,13 +5,13 @@ import org.obl.ddd._
 final case class PlayerId(id: Long)
 final case class Player(id: PlayerId, name: String, password:String)
 
-case class TeamId(id:Long)
-final case class Team(id:TeamId, name:String, players:Seq[PlayerId])
-final case class Teams(teams:Seq[Team]) 
-
 sealed trait GamePlayers
-final case class Players(players:Set[PlayerId]) extends GamePlayers
-final case class TeamPlayers(players:Set[TeamPlayer], teams:Set[TeamInfos]) extends GamePlayers
+final case class Players(players: Set[PlayerId]) extends GamePlayers
+final case class TeamPlayers(players: Set[TeamPlayer], teams:Set[Team]) extends GamePlayers
+
+final case class TeamPlayer(player:PlayerId, teamName:String)
+final case class Team(name:String)
+final case class Teams(teams:Seq[Team]) 
 
 object GamePlayers {
   
@@ -32,5 +32,4 @@ object GamePlayers {
 }
 
 
-final case class TeamInfos(name:String)
-final case class TeamPlayer(player:PlayerId, teamName:String) 
+ 
