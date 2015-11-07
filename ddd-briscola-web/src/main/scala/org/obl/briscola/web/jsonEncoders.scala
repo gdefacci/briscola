@@ -66,7 +66,7 @@ object jsonEncoders {
     EncodeJson.derive[Presentation.Card]
   }
   
-  implicit lazy val playerScore = EncodeJson.derive[Presentation.PlayerScore]
+  implicit lazy val playerScore = EncodeJson.derive[Presentation.Score]
   
   implicit lazy val playerStateEncoder = EncodeJson.derive[Presentation.PlayerState]
 

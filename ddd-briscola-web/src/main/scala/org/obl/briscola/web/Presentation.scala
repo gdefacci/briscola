@@ -11,12 +11,11 @@ object Presentation {
   final case class EventAndState[E,S](event:E, state:S)    
   final case class Collection[T](members:Iterable[T])
   
-  sealed trait Score
-  final case class PlayerScore(cards:Set[Card])
+  final case class Score(cards:Set[Card])
   
   final case class Player(self:Path, name:String, webSocket:Path, createCompetition:Path)
-  final case class PlayerState(player:Path, cards: Set[Card], score: PlayerScore)
-  final case class PlayerFinalState(player:Path, points:Int, score: PlayerScore)
+  final case class PlayerState(player:Path, cards: Set[Card], score: Score)
+  final case class PlayerFinalState(player:Path, points:Int, score: Score)
 
   sealed trait ADT[E <: Enumeration] {
     def kind:E#Value
