@@ -150,7 +150,7 @@ class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRo
         errOrComp match {
           case -\/(err) => InternalServerError(err.toString)
           case \/-(comp) => 
-            service.createCompetition(pid, org.obl.briscola.player.Players(comp.players.toSet), comp.kind, comp.deadline) match {
+            service.createCompetition(pid, comp.players, comp.kind, comp.deadline) match {
               case -\/(err) => InternalServerError(err.toString)
               case \/-(content:ClientCompetitionState) => Ok(responseBody( toPresentation(content, Some(pid))))
               case _ => NotFound()

@@ -13,9 +13,12 @@ import org.obl.briscola.player.PlayerId
 import org.obl.briscola.web.util.ArgonautHelper.enumDecoder
 import org.obl.briscola.web.util.ArgonautHelper.pathDecoder
 import org.obl.briscola.presentation
-
 import argonaut.DecodeJson
 import argonaut.DecodeResult
+import org.obl.briscola.player.Team
+import org.obl.briscola.player.TeamPlayer
+import org.obl.briscola.player.TeamPlayers
+import org.obl.briscola.player.GamePlayers
 
 object jsonDecoders {
   
@@ -26,6 +29,12 @@ object jsonDecoders {
     ) yield presentation.Input.Player(name, psw)
   }
 
+  implicit val teamDecoder= DecodeJson[Team] { j =>
+    for (
+      name <- (j --\ "name").as[String]
+    ) yield Team(name)
+  }
+  
   implicit val seedDecoder = enumDecoder(Seed) 
 
   implicit val cardDecoder = DecodeJson[Card] { j =>
@@ -41,6 +50,30 @@ object jsonDecoders {
     private implicit lazy val playerIdDecoder:DecodeJson[PlayerId] = {
       import playerRoutes._      
       pathDecoder(PlayerById.decoderWrap)
+    }
+    
+    implicit val gamePlayersDecoder = {
+      
+      implicit val teamGamePlayerDecoder = DecodeJson[TeamPlayer] { j =>
+        for (
+          player <- (j --\ "player").as[PlayerId];
+          teamName <- (j --\ "teamName").as[String]
+        ) yield TeamPlayer(player, teamName)
+      }
+      
+      implicit val teamPlayersDecoder = DecodeJson[TeamPlayers] { j =>
+        for (
+          players <- (j --\ "players").as[Set[TeamPlayer]];
+          teams <- (j --\ "teams").as[Set[Team]]
+        ) yield TeamPlayers(players, teams)      
+      }
+      
+      DecodeJson[GamePlayers] { j =>
+        j.as[Set[PlayerId]].toOption match {
+          case Some(players) => DecodeResult.ok(org.obl.briscola.player.Players(players))
+          case _ => j.as[TeamPlayers].map[GamePlayers](i => i)
+        }
+    }
     }
 
     private implicit lazy val matchKindDecoder:DecodeJson[MatchKind] = {
@@ -88,7 +121,7 @@ object jsonDecoders {
     implicit lazy val competitionEncoder = {
       DecodeJson[presentation.Input.Competition] { j =>
         for (
-          players <- (j --\ "players").as[Seq[PlayerId]];
+          players <- (j --\ "players").as[GamePlayers];
           kind <- (j --\ "kind").as[Option[MatchKind]];
           deadline <- (j --\ "deadline").as[Option[CompetitionStartDeadline]]
         ) yield {
