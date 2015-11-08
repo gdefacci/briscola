@@ -1,0 +1,11 @@
+node_modules
+target
+*.class
+*.zip
+*.jar
+.cache-main
+.cache-tests
+.classpath
+.project
+.settings
+.tscache

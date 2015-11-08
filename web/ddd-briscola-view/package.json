@@ -1,0 +1,45 @@
+{
+  "name": "ddd-briscola-view",
+  "description": "briscola web view",
+  "license": "(MIT OR Apache-2.0)",
+  "version": "0.1.0",
+  "files":[ 
+    "*.js", 
+    "*.ts", 
+    "*.js.map",
+    "lib/**/*.js", 
+    "lib/**/*.ts", 
+    "lib/**/*.js.map",
+    "test/**/*.js", 
+    "test/**/*.ts", 
+    "test/**/*.js.map",
+    "src/**/*.ts" 
+  ],
+  "devDependencies": {
+    "rimraf": "2.4.3",
+    "shelljs": "0.5.3",
+    "css-loader": "^0.21.0",
+    "file-loader": "^0.8.4",
+    "source-map-loader": "^0.1.5",
+    "style-loader": "^0.13.0",
+    "stylus-loader": "^1.4.0",
+    "ts-loader": "^0.5.6",
+    "typescript": "1.6.2"
+  },
+  "dependencies": {
+    "ddd-briscola-app": "file:../ddd-briscola-app",
+    "ddd-briscola-model": "file:../ddd-briscola-model",
+    "extract-text-webpack-plugin": "^0.8.2",
+    "flib": "0.1.1",
+    "react": "0.13.3",
+    "rest-fetch": "0.1.0",
+    "rx": "3.1.2",
+    "webpack": "^1.12.2"
+  },
+  "scripts": {
+    "dist":"npm run web && shjs ./scripts/dist.js",
+    "clean":"rimraf Main.js* Main.d.ts test lib dist",
+    "prepublish": "tsc -p src --outDir .",
+    "web": "webpack --config ./scripts/webpack.config.js"
+  }
+}

@@ -1,0 +1,34 @@
+.event-log {
+  height:events-log-height;
+  width:board-width;
+  overflow-y: auto;
+  color: white;
+  line-height: 18px;
+  vertical-align:middle;
+
+  a {
+    color: white;
+    text-decoration:none;
+    margin-top: 5px;
+    display: inline-block;
+  }
+
+  a:visited {
+    color: white;
+  }
+
+  p {
+    margin-top:0px;
+    margin-bottom:0px;
+  }
+
+  &>div {
+    min-height:30px;
+  }
+  &>div:nth-child(even) {
+    background-color:#303030
+  }
+  &>div:nth-child(odd) {
+    background-color:#494848
+  }
+}

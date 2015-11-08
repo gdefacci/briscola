@@ -1,0 +1,35 @@
+{
+	"compilerOptions": {
+                "module": "commonjs",
+                "target": "es5",
+                "moduleResolution": "node",
+                "declaration": true,
+                "sourceMap": true,
+                "emitDecoratorMetadata": true,
+                "experimentalDecorators":true
+	},
+	"files": [
+                "libs/es6-promise/es6-promise.d.ts",
+                "libs/reflect-metadata/reflect-metadata.d.ts",
+                "libs/whatwg-fetch/whatwg-fetch.d.ts",
+
+                "../node_modules/flib/index.d.ts",
+                "../node_modules/rest-fetch/index.d.ts",
+
+                "lib/Util.ts",
+                "lib/model.ts",
+                "lib/player.ts",
+                "lib/board.ts",
+                "lib/competition.ts",
+                "lib/competitionEvents.ts",
+                "lib/game.ts",
+                "lib/EventAndState.ts",
+                "lib/input.ts",
+                
+                "index.ts",
+
+                "test/testData.ts",
+                "test/test.ts"
+
+	]
+}
