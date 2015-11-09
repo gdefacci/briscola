@@ -15,7 +15,7 @@ import org.obl.briscola.web.util.ArgonautHelper.pathDecoder
 import org.obl.briscola.presentation
 import argonaut.DecodeJson
 import argonaut.DecodeResult
-import org.obl.briscola.player.Team
+import org.obl.briscola.player.TeamInfo
 import org.obl.briscola.player.TeamPlayer
 import org.obl.briscola.player.TeamPlayers
 import org.obl.briscola.player.GamePlayers
@@ -29,10 +29,10 @@ object jsonDecoders {
     ) yield presentation.Input.Player(name, psw)
   }
 
-  implicit val teamDecoder= DecodeJson[Team] { j =>
+  implicit val teamInfoDecoder= DecodeJson[TeamInfo] { j =>
     for (
       name <- (j --\ "name").as[String]
-    ) yield Team(name)
+    ) yield TeamInfo(name)
   }
   
   implicit val seedDecoder = enumDecoder(Seed) 
@@ -64,7 +64,7 @@ object jsonDecoders {
       implicit val teamPlayersDecoder = DecodeJson[TeamPlayers] { j =>
         for (
           players <- (j --\ "players").as[Set[TeamPlayer]];
-          teams <- (j --\ "teams").as[Set[Team]]
+          teams <- (j --\ "teams").as[Set[TeamInfo]]
         ) yield TeamPlayers(players, teams)      
       }
       

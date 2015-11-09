@@ -6,32 +6,6 @@ import scalaz.{-\/, \/, \/-}
 
 import org.obl.briscola.player._
 
-object GameValidator {
-  def checkPlayersNumber(players:Set[PlayerId]) = {
-    val playersNumber = players.size
-    if (playersNumber > GameState.MAX_PLAYERS) Some(TooManyPlayers(players, GameState.MAX_PLAYERS))
-    else if (playersNumber < GameState.MIN_PLAYERS) Some(TooFewPlayers(players, GameState.MIN_PLAYERS))
-    else None
-  }
-  
-  def checkAllPlayersExists(playerById:PlayerId => Option[Player], players:Set[PlayerId]):PlayersDoNotExist \/ Set[Player] = {
-    players.foldLeft[PlayersDoNotExist \/ Set[Player]](\/-(Set.empty)) { (acc, i) =>
-      acc match {
-        case err @ -\/(PlayersDoNotExist(nonExistingPlayers)) => {
-          playerById(i) match {
-            case Some(p) => err
-            case None => -\/(PlayersDoNotExist(nonExistingPlayers + i))
-          }
-        }
-        case \/-(players) => playerById(i) match {
-          case Some(p) => \/-(players + p)
-          case None => -\/(PlayersDoNotExist(Set(i)))
-        }
-      }
-    }
-  }
-}
-
 trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, BriscolaError] {
   
   def nextId:GameId
@@ -40,23 +14,17 @@ trait GameDecider extends Decider[GameState, BriscolaCommand, BriscolaEvent, Bri
   def apply(s:GameState, cmd:BriscolaCommand):BriscolaError \/ Seq[BriscolaEvent] = {
     (s, cmd) match {
       case (EmptyGameState, StartGame(gamePlayers)) =>
-        
-        val players = GamePlayers.getPlayers(gamePlayers)
-        GameValidator.checkPlayersNumber(players) match {
-          case Some(err) => -\/(err)
-          case None => GameValidator.checkAllPlayersExists(playerById, players) match {
-            case -\/(err) => -\/(err)
-            case \/-(players) => 
-              val (deck, plyrs) = players.foldLeft(Deck.initial -> Seq.empty[PlayerState]) { (acc, player) =>
-                val (deck, currPlayers) = acc
-                val (cards, newDeck) = deck.takeCards(3)
-                newDeck -> (currPlayers ++ Seq(PlayerState(player.id, cards, Score.empty)))
-              }
-              
-              \/-(Seq(GameStarted(ActiveGameState(nextId, deck.briscolaCard(players.size), deck, Nil, plyrs, None))))
+
+        GamePlayersValidator.withValidPlayersAndTeams(gamePlayers, playerById(_)) { (players, teams) =>
+          val (deck, plyrs) = players.foldLeft(Deck.initial -> Seq.empty[PlayerState]) { (acc, player) =>
+            val (deck, currPlayers) = acc
+            val (cards, newDeck) = deck.takeCards(3)
+            newDeck -> (currPlayers ++ Seq(PlayerState(player.id, cards, Score.empty)))
           }
+
+          Seq(GameStarted(ActiveGameState(nextId, deck.briscolaCard(players.size), deck, Nil, plyrs, teams)))
         }
-      
+        
       case (EmptyGameState, _) => 
         -\/(GameNotStarted)
         

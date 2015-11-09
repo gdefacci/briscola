@@ -25,7 +25,6 @@ final case class Card(number: Byte, seed: Seed.Value)  {
 object Deck {
   
   lazy val empty = new Deck(Seq.empty)
-
   
   def initial = {
     val cards = for (seed <- Seed.values; number <- 1.to(10)) yield (Card(number.toByte, seed))
@@ -54,6 +53,11 @@ object GameState {
   
   val MIN_PLAYERS = 2
   val MAX_PLAYERS = 8
+  
+  val MIN_TEAMS_NUMBER = 2
+  val MAX_TEAMS_NUMBER = 4
+  val TEAM_MIN_PLAYERS_NUMBER = 2
+  val TEAM_MAX_PLAYERS_NUMBER = 4
   
   def id(gm: GameState):Option[GameId] = gm match {
     case EmptyGameState => None
@@ -102,7 +106,15 @@ final case class FinalGameState(id:GameId, briscolaCard:Card, players:Seq[Player
   
   lazy val playersOrderByPoints = players.sortBy(_.score) 
   
+  lazy val teamScoresOrderByPoints:Option[Seq[TeamScore]] = teams.map { teams =>
+    teams.teams.map { (t:Team) =>
+      val score = players.filter( pl => t.players.contains(pl.id) ).foldLeft(Score.empty)( (acc:Score, pl:PlayerFinalState) => acc.add(pl.score) )
+      TeamScore(t, score)
+    }.sortBy(_.score)
+  }
+  
   lazy val winner = playersOrderByPoints.head
+  lazy val winnerTeam:Option[TeamScore] = teamScoresOrderByPoints.flatMap(_.headOption)
   
 } 
 
@@ -138,3 +150,5 @@ final case class Score(cards:Set[Card]) extends Ordered[Score] {
 object Score {
   val empty = Score(Set.empty)
 }
+
+case class TeamScore(team:Team, score:Score)

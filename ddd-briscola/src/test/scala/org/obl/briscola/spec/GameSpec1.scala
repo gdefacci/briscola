@@ -113,7 +113,7 @@ object GameSpec1 extends App with BriscolaSpec {
           case gm: ActiveGameState => gm.nextPlayers.map(_.id).toSet == players
           case _ => false
         } )).andThenOnNewState[ActiveGameState](  
-          playACardFor(40)( { 
+          playACardFor(40)(  
             Expect(
               StateThat("total points are 120") {
                 case gm: FinalGameState => gm.playersOrderByPoints.map(_.points).sum == 120
@@ -123,7 +123,7 @@ object GameSpec1 extends App with BriscolaSpec {
                 case gm: FinalGameState => gm.playersOrderByPoints.map(_.score.cards.size).sum == 40
                 case _ => false
               })
-          })
+          )
         )
            
     )
