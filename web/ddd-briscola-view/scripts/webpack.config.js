@@ -1,13 +1,17 @@
 var ExtractTextPlugin = require("extract-text-webpack-plugin");
 var path = require("path");
 
+var distFolder = process.env.npm_config_deployFolder !== undefined ?
+      path.join(process.env.npm_config_deployFolder, ".") :
+      path.join(__dirname, "../dist") ;
+
 module.exports = {
   context: path.join(__dirname, "../src"),
   entry: './Main.tsx',
   displayErrorDetails: true,
   debug: true,
   output: {
-    path: path.join(__dirname, "../dist"),
+    path: distFolder,
     filename: 'ddd-briscola-view.browser.js'
   },
   resolve: {

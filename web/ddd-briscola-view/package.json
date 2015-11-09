@@ -40,6 +40,7 @@
     "dist":"npm run web && shjs ./scripts/dist.js",
     "clean":"rimraf Main.js* Main.d.ts test lib dist",
     "prepublish": "tsc -p src --outDir .",
-    "web": "webpack --config ./scripts/webpack.config.js"
+    "web": "webpack --config ./scripts/webpack.config.js",
+    "webdev": "webpack --config ./scripts/webpack.config.js --watch"
   }
 }

@@ -17,7 +17,7 @@ export class EventsLog extends React.Component<EventLogProps, void> {
   render() {
     const props = this.props
     const events = props.events
-    const elemEvs = events.reverse().map((event, i) => {
+    const elemEvs = events.map((event, i) => {
       switch (event.eventName) {
         case PlayerEventKind[PlayerEventKind.playerLogOn]: {
           const ev = event as Model.PlayerLogOn

@@ -1,35 +1,41 @@
-cardWidth := 100px
-cardHeight := 100px
-kinds = "bastoni" "spade" "coppe" "denari"
+seeds = "bastoni" "spade" "coppe" "denari"
+number-of-cards-per-seed := 10
+number-of-seeds := length(seeds)
 
-cardOf(kind, n, x, y) {
-  .card_{kind}_{n} {
+card-width := 100px
+card-height := 100px
+cards-image-url := "cards.jpg"
+cards-image-width := card-width * number-of-cards-per-seed
+cards-image-height := card-height * number-of-seeds
+
+cardOf(seed, n, x, y) {
+  .card_{seed}_{n} {
     background-position: x y;
   }
 }
 
-cardsOf(kind, y) 
+cardsOf(seed, y)
   for num in 1..10
-    cardOf(kind, num, (1 - num)*cardWidth, y)
+    cardOf(seed, num, (1 - num)*card-width, y)
 
 allCards()
-  for kind, i in kinds
-    cardsOf(kind, (- i)*cardHeight)
+  for seed, i in seeds
+    cardsOf(seed, (- i)*card-height)
 
 .card {
-  height:cardHeight;
-  width:cardWidth;
-  background-image: url(cards.jpg);
-  background-size: 1000px 400px;
-}  
+  height:card-height;
+  width:card-width;
+  background-image: url(cards-image-url);
+  background-size: cards-image-width cards-image-height;
+}
 
 allCards()
 
 .cards {
+  page-item();
   display: flex;
   flex-direction:row;
   align-items: stretch;
-  width:board-width;
 }
 
 .cards>div {
@@ -41,12 +47,12 @@ allCards()
 
 .cards span {
   margin-top:10px;
-  text-align: center;  
+  text-align: center;
 }
 
 .cards>div:last-child {
   flex: 1;
-}  
+}
 
 .cards span {
   display:block;
@@ -64,7 +70,7 @@ allCards()
 }
 
 .card-half {
-  height: 50px;
+  height: (card-height / 2);
   padding:0 0 0 0;
   margin:0 0 0 0;
 }
