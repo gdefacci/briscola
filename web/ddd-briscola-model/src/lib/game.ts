@@ -1,7 +1,7 @@
 import {lazy, Option, JsMap} from "flib"
 import {Path, DomainEvent, byKindChoice, ByKindChoice} from "./model"
 import {CurrentPlayer, Player} from "./player"
-import {link, convert, Converter, ConstructorType, SimpleConverter, ByPropertyChooseConverter, ChooseConverter} from "rest-fetch"
+import {link, convert, Converter, JsConstructor, SimpleConverter, ByPropertySelector, Selector} from "rest-fetch"
 
 export enum GameStateKind {
   active, dropped, finished
@@ -65,6 +65,46 @@ export class PlayerState {
 
 export type GameState = FinalGameState | ActiveGameState | DroppedGameState
 
+export type GameResult = PlayersGameResult | TeamsGameResult
+
+export class PlayersGameResult {
+  @convert({ arrayOf:PlayerFinalState })
+  playersOrderByPoints: PlayerFinalState[]
+
+  @convert()
+  winner: PlayerFinalState
+}
+
+export class TeamScore {
+  teamName:string
+
+  @link({ arrayOf:Player })
+  players:Player[]
+
+  @convert({ arrayOf:Card })
+  cards:Card[]
+
+  points:number
+}
+
+export class TeamsGameResult {
+  @convert({ arrayOf:TeamScore })
+  teamsOrderByPoints: TeamScore[]
+
+  @convert()
+  winnerTeam: TeamScore
+}
+
+const gameResultChoice = Selector.byPropertyExists([{ key:"playersOrderByPoints", value:PlayersGameResult }, { key:"teamsOrderByPoints", value:TeamsGameResult }])
+
+/*
+const gameResultChoice = Selector.create( a => {
+  if (a["playersOrderByPoints"]) return Option.some(PlayersGameResult)
+  else if (a["teamsOrderByPoints"]) return Option.some(TeamsGameResult)
+  else return Option.none<JsConstructor<GameResult>>();
+})
+*/
+
 export class FinalGameState {
   self: Path
 
@@ -105,7 +145,7 @@ export class ActiveGameState {
 export class DropReason {
 }
 
-export const dropReasonChoice = new ChooseConverter( ws => Option.some(PlayerLeft) )
+export const dropReasonChoice = new Selector( ws => Option.some(PlayerLeft) )
 
 export class PlayerLeft extends DropReason {
   @link()

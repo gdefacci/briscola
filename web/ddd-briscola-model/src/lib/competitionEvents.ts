@@ -2,7 +2,7 @@ import {Option} from "flib"
 import {CompetitionState} from "./competition"
 import {Path, DomainEvent, ByKindChoice, byKindChoice} from "./model"
 import {Player} from "./player"
-import {link, convert, Converter, ConstructorType, ChooseConverter, ByPropertyChooseConverter} from "rest-fetch"
+import {link, convert, ByPropertySelector} from "rest-fetch"
 
 export enum CompetitionEventKind {
   createdCompetition, confirmedCompetition, playerAccepted, playerDeclined

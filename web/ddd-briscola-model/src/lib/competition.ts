@@ -1,7 +1,7 @@
 import {JsMap, Option} from "flib"
 import {Path, DomainEvent, ByKindChoice, byKindChoice} from "./model"
 import {Player} from "./player"
-import {link, convert, Converter, ConstructorType, SimpleConverter, ChooseConverter, ByPropertyChooseConverter} from "rest-fetch"
+import {link, convert, Converter, JsConstructor, SimpleConverter, Selector, ByPropertySelector} from "rest-fetch"
 
 export enum MatchKindKind {
   singleMatch, numberOfGamesMatchKind, targetPointsMatchKind
@@ -17,7 +17,7 @@ export enum CompetitionStartDeadlineKind {
 
 export type CompetitionStartDeadline = AllPlayers | OnPlayerCount
 
-export const toCompetitionStartDeadline = ChooseConverter.create((wso:{kind:string}) => {
+export const toCompetitionStartDeadline = Selector.create((wso:{kind:string}) => {
   switch(wso.kind) {
     case CompetitionStartDeadlineKind[CompetitionStartDeadlineKind.allPlayers] : return Option.some(AllPlayers)
     case CompetitionStartDeadlineKind[CompetitionStartDeadlineKind.onPlayerCount] :return Option.some(OnPlayerCount)
@@ -43,12 +43,12 @@ export class OnPlayerCount {
 export type MatchKind = SingleMatch | NumberOfGamesMatchKind | TargetPointsMatchKind
 
 
-export const toMatchKind = ChooseConverter.create((wso:{kind:string}) => {
+export const toMatchKind = Selector.create((wso:{kind:string}) => {
   switch(wso.kind) {
     case MatchKindKind[MatchKindKind.singleMatch] : return Option.some(SingleMatch)
     case MatchKindKind[MatchKindKind.numberOfGamesMatchKind] :return Option.some(NumberOfGamesMatchKind)
     case MatchKindKind[MatchKindKind.targetPointsMatchKind] :return Option.some(TargetPointsMatchKind)
-    default: return Option.none<ConstructorType<any>>()
+    default: return Option.none<JsConstructor<any>>()
   }
 }, "match kind" )
 

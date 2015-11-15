@@ -1,6 +1,6 @@
 import {DomainEvent, Path, ByKindChoice, byKindChoice} from "./model"
 import {Option} from "flib"
-import {link, ByPropertyChooseConverter} from "rest-fetch"
+import {link, ByPropertySelector} from "rest-fetch"
 
 export class Player {
   self: Path
@@ -14,6 +14,13 @@ export class CurrentPlayer extends Player {
 
 export enum PlayerEventKind {
   playerLogOn, playerLogOff
+}
+
+export class Team {
+  self:Path
+  name:string
+  @link({ arrayOf:Player })
+  players:Player[]
 }
 
 export type PlayerEvent = PlayerLogOn | PlayerLogOff

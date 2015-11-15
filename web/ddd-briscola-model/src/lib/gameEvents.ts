@@ -1,5 +1,5 @@
 import {dropReasonChoice, gameStateChoice, GameState, Card, ActiveGameState, DropReason} from "./game"
-import {link, convert, ByPropertyChooseConverter} from "rest-fetch"
+import {link, convert, ByPropertySelector} from "rest-fetch"
 import {DomainEvent, byKindChoice, ByKindChoice} from "./model"
 import {Player} from "./player"
 
