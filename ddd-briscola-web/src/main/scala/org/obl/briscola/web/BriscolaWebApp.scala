@@ -12,7 +12,7 @@ import org.obl.briscola.web.util.WSEndPointAdder._
 import javax.websocket.server.ServerContainer
 import scala.reflect.ClassTag
 
-class BriscolaWebApp(routes:AppRoutes, app:BriscolaApp) {
+class BriscolaWebApp(routes:AppRoutes, val app:BriscolaApp) {
   
   lazy val playerPresentationAdapter = PlayerPresentationAdapter (routes.playerRoutes, routes.playerWebSocketRoutes, routes.competitionRoutes)
   
@@ -28,7 +28,7 @@ class BriscolaWebApp(routes:AppRoutes, app:BriscolaApp) {
   lazy val competitionsPlan = new CompetitionsPlan(routes.competitionRoutes, routes.playerRoutes, app.competitionService, competitionPresentationAdapter) 
   
   lazy val siteMap = 
-    presentation.SiteMap(routes.playerRoutes.Players, routes.playerRoutes.PlayerLogin)
+    presentation.SiteMap(routes.playerRoutes.Players.encodePath, routes.playerRoutes.PlayerLogin.encodePath)
   
   lazy val siteMapPlan = new SiteMapPlan(routes.siteMapRoutes, siteMap) 
   

@@ -36,6 +36,8 @@ object resources {
 
     val player = byId / "player" / playerIdSegment
 
+    val team = byId / "team" / Segment.string
+    
   }
 
   object Competitions extends BaseResource {

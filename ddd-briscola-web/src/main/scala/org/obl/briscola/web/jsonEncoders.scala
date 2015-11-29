@@ -90,6 +90,15 @@ object jsonEncoders {
   
   implicit lazy val activeGameEncoder = withKind[presentation.GameStateKind.type](derive[presentation.ActiveGameState]) 
   
+  implicit lazy val teamScore = derive[presentation.TeamScore]
+  
+  implicit lazy val gameResultEncoder:EncodeJson[presentation.GameResult] = {
+    jencode1((p: presentation.GameResult) => p match {
+      case tgmr:presentation.TeamsGameResult => derive[presentation.TeamsGameResult](tgmr)
+      case pgmr:presentation.PlayersGameResult => derive[presentation.PlayersGameResult](pgmr)
+    })    
+  }
+  
   implicit lazy val gameStateEncoder = {
     
     lazy val emptyGameEncoder = singletonADTEncoder[presentation.GameStateKind.type, presentation.EmptyGameState.type]

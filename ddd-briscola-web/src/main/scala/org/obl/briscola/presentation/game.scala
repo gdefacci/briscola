@@ -2,7 +2,6 @@ package org.obl.briscola.presentation
 
 import org.obl.raz.Path
 import org.obl.briscola.Seed
-import org.obl.briscola.player.PlayerId
 
 final case class Card(number: Byte, seed: Seed.Value, points: Int)
 
@@ -33,14 +32,20 @@ final case class PlayerLeft(player: Path, reason: Option[String]) extends DropRe
   val kind = DropReasonKind.playerLeft
 }
 
-final case class ActiveGameState(self: Path, briscolaCard: Card, moves: Seq[Move], nextPlayers: Seq[Path], currentPlayer: Path,
+final case class ActiveGameState(self: Path, briscolaCard: Card, teams:Option[Seq[Path]], moves: Seq[Move], nextPlayers: Seq[Path], currentPlayer: Path,
     isLastHandTurn: Boolean, isLastGameTurn: Boolean, players: Set[Path], playerState: Option[Path], deckCardsNumber: Int) extends GameState {
   def kind = GameStateKind.active
 }
-final case class DroppedGameState(self: Path, briscolaCard: Card, moves: Seq[Move], nextPlayers: Seq[Path], dropReason: DropReason) extends GameState {
+final case class DroppedGameState(self: Path, briscolaCard: Card, teams:Option[Seq[Path]], moves: Seq[Move], nextPlayers: Seq[Path], dropReason: DropReason) extends GameState {
   def kind = GameStateKind.dropped
 }
-final case class FinalGameState(self: Path, briscolaCard: Card, playersOrderByPoints: Seq[PlayerFinalState], winner: PlayerFinalState) extends GameState {
+
+sealed trait GameResult
+final case class PlayersGameResult(playersOrderByPoints: Seq[PlayerFinalState], winner: PlayerFinalState) extends GameResult
+final case class TeamsGameResult(teamsOrderByPoints: Seq[TeamScore], winnerTeam: TeamScore) extends GameResult
+final case class TeamScore(teamName:String, players:Set[Path], cards:Set[Card], points:Int)
+
+final case class FinalGameState(self: Path, briscolaCard: Card, gameResult:GameResult) extends GameState {
   def kind = GameStateKind.finished
 }
 case object EmptyGameState extends GameState {

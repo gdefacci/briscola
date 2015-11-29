@@ -8,7 +8,7 @@ import scala.language.implicitConversions
 
 class JettyPlanAdder(context:ServletContextHandler) {
   
-  def addPlan(plan:Plan) = {
+  def addPlan(plan:ServletPlan) = {
     val pth = plan.servletPath.path.mkString("/")
     println("*"*80)
     val servletPath = s"/$pth/*"

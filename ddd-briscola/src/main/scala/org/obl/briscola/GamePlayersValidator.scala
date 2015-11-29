@@ -11,10 +11,23 @@ object GamePlayersValidator {
     for (
       _       <- checkPlayersNumber(players);
       players <- checkAllPlayersExists(playerById, players);
-      teams   <- checkValidTeams(gamePlayers)
+      teams   <- checkValidTeams(gamePlayers);
+      _ <- checkPlayersBelongOnlyOneTeam(teams)
     ) yield {
       f(players, teams)
     }
+  }
+  
+  private def checkPlayersBelongOnlyOneTeam(optTeams:Option[Teams]):BriscolaError \/ Unit = {
+    lazy val success = \/-(())
+    optTeams.map { teams =>
+      val allPlayers = teams.teams.flatMap(_.players)
+      val playerTeams = allPlayers.map( pl => pl -> teams.teams.filter( t => t.players.contains(pl)) )
+      playerTeams.find( p => p._2.length > 1) match {
+        case None => success
+        case Some((player, teams)) => -\/(PlayerCanHaveOnlyOneTeam(player, teams.map( t =>TeamInfo(t.name))))
+      }
+    } getOrElse success
   }
   
   private def checkValidTeams(gamePlayers:GamePlayers):BriscolaError \/ Option[Teams] = {

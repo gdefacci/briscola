@@ -13,11 +13,12 @@ import scalaz.{ -\/, \/, \/- }
 import org.obl.briscola.web.util.ServletRoutes
 import jsonEncoders._
 import jsonDecoders._
-import org.obl.briscola.web.util.Plan
+import org.obl.briscola.web.util.{Plan, BiPath}
 import org.obl.briscola.player.GamePlayers
+import org.obl.briscola.web.util.ServletPlan
 
 trait CompetitionRoutes extends ServletRoutes {
-  def Competitions: org.obl.raz.Path
+  def Competitions: BiPath
   def CompetitionById: PathCodec.Symmetric[CompetitionId]
   def PlayerCompetitionById: PathCodec.Symmetric[(CompetitionId, PlayerId)]
   def AcceptCompetition: PathCodec.Symmetric[(CompetitionId, PlayerId)]
@@ -90,7 +91,7 @@ trait CompetitionPresentationAdapter {
 
 }
 
-class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRoutes, service: => CompetitionsService, toPresentation: => CompetitionPresentationAdapter)  extends PlayerRoutesJsonDecoders with Plan {
+class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRoutes, service: => CompetitionsService, toPresentation: => CompetitionPresentationAdapter)  extends PlayerRoutesJsonDecoders with ServletPlan {
 
   lazy val routes = _routes
   lazy val playerRoutes = _playerRoutes

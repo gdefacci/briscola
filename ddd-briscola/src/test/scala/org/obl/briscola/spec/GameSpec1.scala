@@ -9,25 +9,6 @@ object GameSpec1 extends App with BriscolaSpec {
 
   val reporter = new PrintlnReporter[GameState, BriscolaEvent, BriscolaError]
 
-//  uncomment to check erro text messages
-//  {
-//    val players = Set(PlayerId(1))
-//    
-//    check(
-//      When(StartGame(Set(PlayerId(1)))) expect
-//        ErrorIs(TooFewPlayers(players, GameState.MAX_PLAYERS)))
-//  }
-//
-//  {
-//    val players = 1.to(GameState.MAX_PLAYERS + 1).map(PlayerId(_)).toSet
-//
-//    check(s"are acepted at max ${GameState.MAX_PLAYERS} players",
-//
-//      When(StartGame(players)) expect
-//        EventsAre(CardPlayed(GameId(1), PlayerId(1), Card(7, Seed.bastoni)))
-//    ) 
-//  }
-  
   {
     val players = Set(PlayerId(1))
     

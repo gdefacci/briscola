@@ -12,10 +12,27 @@ import org.obl.raz.PathDecoder
 
 trait Plan {
 
-  def routes: ServletRoutes
   def plan: HttpService
 
+}
+
+trait ServletPlan extends Plan {
+  protected def routes: ServletRoutes
+  
   def servletPath: PathSg = routes.servletPath
+}
+
+class BiPath(val decodePath:Path, val encodePath:Path) {
+  
+  private val pathDecoder = PathDecoder.fromPath(decodePath)
+  
+  def render = encodePath.render
+  
+  def unapply[P](pth:P)(implicit extPth:org.obl.raz.ext.ExtPathDecode[P]):Option[Path] = {
+    val p = extPth(pth)
+    pathDecoder.decodeFull(p).toOption
+  }
+  
 }
 
 trait PrefixedRoutes {
@@ -27,9 +44,10 @@ trait PrefixedRoutes {
     def decoderWrap: PathDecoder[Path] =
       Path(Path.baseOf(p), prefix.add(p.path), p.params, p.fragment)
 
-    def encodersWrap = {
-      val p1 = Path(Some(host), p.path, p.params, p.fragment)
-      Path.renderPrepend(prefix, p1)
+    def encodersWrap = { 
+      val enc = Path(Some(host), prefix.add(p.path), p.params, p.fragment)
+      val dec = Path(None, p.path, p.params, p.fragment)
+      new BiPath(dec, enc)
     }
   }
 

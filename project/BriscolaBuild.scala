@@ -52,4 +52,18 @@ object BriscolaBuild extends Build {
     "org.cvogt" %% "scalacheck-extensions" % "0.2"
   )
 
+  lazy val databinderDispatch = "net.databinder.dispatch" %% "dispatch-core" % "0.11.3"
+  
+  lazy val scalaTest = "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+
+
+  //lazy val scalazSpec2 = "org.typelevel" %% "scalaz-specs2" % "0.4.0"
+  
+  
+  /*
+  lazy val scalazScalacheckBinding = "org.scalaz"           %% "scalaz-scalacheck-binding" % scalazCore.revision
+  lazy val scalaCheck          = "org.scalacheck"           %% "scalacheck"              % "1.12.4"
+  lazy val scalazSpecs2        = "org.typelevel"            %% "scalaz-specs2"           % "0.4.0"
+  */
+  
 }

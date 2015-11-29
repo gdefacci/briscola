@@ -1,7 +1,6 @@
 package org.obl.briscola.presentation
 
 import org.obl.raz.Path
-import org.obl.briscola.player.PlayerId
 
 object PlayerEventKind extends Enumeration {
   val playerLogOn, playerLogOff = Value

@@ -8,7 +8,7 @@ import javax.websocket.server.ServerContainer
 
 class ServletContextPlanAdder(context:ServletContext) {
   
-  def addPlan(plan:Plan) = {
+  def addPlan(plan:ServletPlan) = {
     val pth = plan.servletPath.path.mkString("/")
     println("*"*80)
     val servletPath = s"/$pth/*"

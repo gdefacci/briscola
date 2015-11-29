@@ -22,3 +22,4 @@ final case class TooFewTeams(teams:Teams, minTeamsNumber:Int) extends BriscolaEr
 final case class TooManyPlayersPerTeam(teams:Teams, teamMaxPlayersNumber:Int) extends BriscolaError
 final case class TooFewPlayersPerTeam(teams:Teams, teamMinPlayersNumber:Int) extends BriscolaError
 final case class TeamsMustHaveSameNumberOfPlayers(teams:Teams) extends BriscolaError
+final case class PlayerCanHaveOnlyOneTeam(pid:PlayerId, teams:Seq[TeamInfo]) extends BriscolaError

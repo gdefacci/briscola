@@ -3,10 +3,10 @@ package org.obl.briscola.web
 import org.http4s.server._
 import org.http4s.dsl._
 import org.obl.raz.http4s.RazHttp4s._
-import org.obl.briscola.web.util.Plan
+import org.obl.briscola.web.util.ServletPlan
 import org.obl.briscola.presentation
 
-class SiteMapPlan(_routes: => SiteMapRoutes, siteMap: => presentation.SiteMap) extends Plan {
+class SiteMapPlan(_routes: => SiteMapRoutes, siteMap: => presentation.SiteMap) extends ServletPlan {
   
   lazy val routes = _routes
   

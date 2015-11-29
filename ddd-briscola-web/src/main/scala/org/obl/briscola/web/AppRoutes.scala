@@ -8,7 +8,7 @@ import org.obl.raz.PathConverter
 import org.obl.raz.PathBase
 import org.obl.raz.PathSg
 import org.obl.raz.PathCodec
-import org.obl.briscola.web.util.ServletRoutes
+import org.obl.briscola.web.util.{ServletRoutes, BiPath}
 
 trait AppRoutes {
   def playerRoutes:PlayerRoutes
@@ -25,7 +25,7 @@ object AppRoutesImpl {
 }
 
 trait SiteMapRoutes extends ServletRoutes {
-  def SiteMap:Path
+  def SiteMap:BiPath
 }
 
 trait RoutesServletConfig {
@@ -67,6 +67,7 @@ class AppRoutesImpl(val config:RoutesServletConfig) extends AppRoutes {
     val Games                   = resources.Games.encodersWrap
     val GameById                = resources.Games.byId.toPathCodec.encodersWrap
     val Player                  = resources.Games.player.toPathCodec.encodersWrap
+    val Team                    = resources.Games.team.toPathCodec.encodersWrap
   }
   
   val competitionRoutes = new CompetitionRoutes with BaseRoutes {

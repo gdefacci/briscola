@@ -20,7 +20,7 @@ import org.obl.raz.BasePosition
 import org.obl.raz.PathPosition
 import org.obl.briscola.web.util.ServletRoutes
 import org.obl.briscola.web.util.WebSocketRoutes
-import org.obl.briscola.web.util.Plan
+import org.obl.briscola.web.util.{ServletPlan, BiPath}
 import org.obl.raz.UriTemplate
 import argonaut.EncodeJson
 import org.obl.briscola.competition.ClientCompetitionState
@@ -31,17 +31,13 @@ import org.obl.raz.PathDecoder
 
 trait PlayerWebSocketRoutes extends WebSocketRoutes {
   def PlayerById: PathConverter[PlayerId, PlayerId, String, SegmentPosition, SegmentPosition]
-//  def PlayerByIdDecoder: PathDecoder[PlayerId]
   def playerByIdUriTemplate: UriTemplate
 }
 
 trait PlayerRoutes extends ServletRoutes {
-  def Players: org.obl.raz.Path
-  def PlayerLogin: org.obl.raz.Path
+  def Players: BiPath
+  def PlayerLogin: BiPath
   def PlayerById: PathCodec.Symmetric[PlayerId]
-//  def PlayerWebSocket: PathConverter[PlayerId, PlayerId, String, _, _]
-//
-//  def playerWebSocketUriTemplate: UriTemplate
 }
 
 trait PlayerPresentationAdapter {
@@ -73,7 +69,7 @@ object PlayerPresentationAdapter {
 }
 
 class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
-    toPresentation: => PlayerPresentationAdapter, gameToPresentation: => GamePresentationAdapter, competitionToPresentation: => CompetitionPresentationAdapter) extends Plan {
+    toPresentation: => PlayerPresentationAdapter, gameToPresentation: => GamePresentationAdapter, competitionToPresentation: => CompetitionPresentationAdapter) extends ServletPlan {
 
   import org.obl.raz.http4s.RazHttp4s._
   import org.obl.briscola.web.util.ArgonautEncodeHelper._

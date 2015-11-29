@@ -9,16 +9,18 @@ import org.obl.briscola.competition.MatchKind
 import org.obl.briscola.competition.NumberOfGamesMatchKind
 import org.obl.briscola.competition.SingleMatch
 import org.obl.briscola.competition.TargetPointsMatchKind
+import org.obl.briscola.player.GamePlayers
 import org.obl.briscola.player.PlayerId
-import org.obl.briscola.web.util.ArgonautHelper.enumDecoder
-import org.obl.briscola.web.util.ArgonautHelper.pathDecoder
-import org.obl.briscola.presentation
-import argonaut.DecodeJson
-import argonaut.DecodeResult
 import org.obl.briscola.player.TeamInfo
 import org.obl.briscola.player.TeamPlayer
 import org.obl.briscola.player.TeamPlayers
-import org.obl.briscola.player.GamePlayers
+
+import org.obl.briscola.presentation
+import org.obl.briscola.web.util.ArgonautHelper.enumDecoder
+import org.obl.briscola.web.util.ArgonautHelper.pathDecoder
+
+import argonaut.DecodeJson
+import argonaut.DecodeResult
 
 object jsonDecoders {
   
