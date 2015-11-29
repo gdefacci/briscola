@@ -2,8 +2,6 @@ package org.obl.briscola.web.util
 
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.webapp.WebAppContext
-import org.obl.briscola.web.JettyWebAppConfig
-import org.obl.briscola.web.JettyServerFactory
 
 trait JettySpec {
 

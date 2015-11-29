@@ -13,7 +13,6 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.Span
 import org.scalatest.time.Seconds
 import org.scalatest.time.Millis
-import org.obl.briscola.web.JettyWebAppConfig
 import org.obl.briscola.web.PlayersPlan
 import org.obl.briscola.web.BriscolaWebAppConfig
 import org.obl.briscola.web.WebAppConfig
@@ -23,6 +22,7 @@ import org.obl.briscola.web.WebAppConfig.DefaultRoutesConfig
 import org.obl.raz.HTTP
 import org.obl.raz.PathSg
 import org.scalatest.BeforeAndAfterAll
+import org.obl.briscola.web.util.JettyWebAppConfig
 
 abstract class E2ETest(secodsTimeout: Int = 1000) extends FunSuite with JettySpec with BeforeAndAfterAll with ScalaFutures with TestDecoders {
 
