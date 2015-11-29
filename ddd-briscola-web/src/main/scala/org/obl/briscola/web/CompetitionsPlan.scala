@@ -13,7 +13,7 @@ import scalaz.{ -\/, \/, \/- }
 import org.obl.briscola.web.util.ServletRoutes
 import jsonEncoders._
 import jsonDecoders._
-import org.obl.briscola.web.util.{Plan, BiPath}
+import org.obl.briscola.web.util.{ Plan, BiPath }
 import org.obl.briscola.player.GamePlayers
 import org.obl.briscola.web.util.ServletPlan
 
@@ -44,7 +44,7 @@ trait CompetitionPresentationAdapter {
     comp match {
       case CompetitionStartDeadline.AllPlayers => presentation.AllPlayers
       case CompetitionStartDeadline.OnPlayerCount(n) => presentation.OnPlayerCount(n)
-    } 
+    }
   }
   def apply(comp: MatchKind): presentation.MatchKind = {
     comp match {
@@ -59,19 +59,19 @@ trait CompetitionPresentationAdapter {
       apply(comp.kind),
       apply(comp.deadline))
   }
-  
-  def apply(cid:CompetitionId, comp: ClientCompetitionEvent, pid:PlayerId): presentation.CompetitionEvent = comp match {
-    case CreatedCompetition(id, issuer, comp) => 
-      presentation.CreatedCompetition( playerRoutes.PlayerById(issuer.id), competitionRoutes.PlayerCompetitionById(id, pid) )
-      
-    case CompetitionAccepted(pid) => 
-      presentation.CompetitionAccepted( playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid) )
-      
-    case CompetitionDeclined(pid, rsn) => 
-      presentation.CompetitionDeclined( playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid), rsn )
-    
+
+  def apply(cid: CompetitionId, comp: ClientCompetitionEvent, pid: PlayerId): presentation.CompetitionEvent = comp match {
+    case CreatedCompetition(id, issuer, comp) =>
+      presentation.CreatedCompetition(playerRoutes.PlayerById(issuer.id), competitionRoutes.PlayerCompetitionById(id, pid))
+
+    case CompetitionAccepted(pid) =>
+      presentation.CompetitionAccepted(playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid))
+
+    case CompetitionDeclined(pid, rsn) =>
+      presentation.CompetitionDeclined(playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid), rsn)
+
   }
-  
+
   def apply(comp: ClientCompetitionState, pid: Option[PlayerId]): presentation.CompetitionState = {
     val (competition, compKind, acceptingPlayers, decliningPlayers) = comp match {
       case c: OpenCompetition => (Some(c.competition), presentation.CompetitionStateKind.open, c.acceptingPlayers, c.decliningPlayers)
@@ -91,19 +91,76 @@ trait CompetitionPresentationAdapter {
 
 }
 
-class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRoutes, service: => CompetitionsService, toPresentation: => CompetitionPresentationAdapter)  extends PlayerRoutesJsonDecoders with ServletPlan {
+object GamePlayersInputAdapter {
+  def apply(playerRoutes: PlayerRoutes) = {
+    val routes = playerRoutes
+    new GamePlayersInputAdapter {
+      lazy val playerRoutes = routes
+    }
+  }
+}
+
+trait GamePlayersInputAdapter {
+
+  val playerRoutes: PlayerRoutes
+
+  def apply(teamPlayer: presentation.Input.TeamPlayer): Throwable \/ org.obl.briscola.player.TeamPlayer = {
+    import playerRoutes._
+    val pidDecoder = playerRoutes.PlayerById.decoderWrap
+    pidDecoder.decodeFull(teamPlayer.player).map { pid =>
+      org.obl.briscola.player.TeamPlayer(pid, teamPlayer.teamName)
+    }
+  }
+
+  def apply(teamInfo: presentation.Input.TeamInfo): Throwable \/ org.obl.briscola.player.TeamInfo = {
+    \/-(org.obl.briscola.player.TeamInfo(teamInfo.name))
+  }
+
+  def apply(gamePlayers: presentation.Input.GamePlayers): Throwable \/ org.obl.briscola.player.GamePlayers = {
+    gamePlayers match {
+
+      case presentation.Input.Players(players) =>
+        import playerRoutes._
+        val z: Throwable \/ Set[PlayerId] = \/-(Set.empty[PlayerId])
+        players.foldLeft(z) { (acc, path) =>
+          acc.flatMap { pids =>
+            val pidDecoder = playerRoutes.PlayerById.decoderWrap
+            pidDecoder.decodeFull(path).map(pid => pids + pid)
+          }
+        }.map(org.obl.briscola.player.Players(_))
+
+      case presentation.Input.TeamPlayers(players, teamInfos) =>
+        val zPlayers: Throwable \/ Set[org.obl.briscola.player.TeamPlayer] = \/-(Set.empty[org.obl.briscola.player.TeamPlayer])
+        val teamPlayers = players.foldLeft(zPlayers) { (acc, teamPlayer) =>
+          acc.flatMap { teamPlayers =>
+            apply(teamPlayer).map(tp => teamPlayers + tp)
+          }
+        }
+        val zTeamInfos: Throwable \/ Set[org.obl.briscola.player.TeamInfo] = \/-(Set.empty[org.obl.briscola.player.TeamInfo])
+        val mTeasmInfos = teamInfos.foldLeft(zTeamInfos) { (acc, teamInfo: presentation.Input.TeamInfo) =>
+          acc.flatMap { tinfos =>
+            apply(teamInfo).map(ti => tinfos + ti)
+          }
+        }
+        for (tps <- teamPlayers; tis <- mTeasmInfos) yield (org.obl.briscola.player.TeamPlayers(tps, tis))
+    }
+
+  }
+
+}
+
+class CompetitionsPlan(_routes: => CompetitionRoutes, service: => CompetitionsService, toPresentation: => CompetitionPresentationAdapter, toModel: => GamePlayersInputAdapter) extends ServletPlan {
 
   lazy val routes = _routes
-  lazy val playerRoutes = _playerRoutes
-  
+
   import org.obl.raz.http4s.RazHttp4s._
   import org.obl.briscola.web.util.ArgonautEncodeHelper._
   import org.obl.briscola.web.util.ArgonautHttp4sDecodeHelper._
 
-  lazy val onlyClientCompetitionState:PartialFunction[CompetitionState, ClientCompetitionState] = {
-    case cc:ClientCompetitionState => cc
+  lazy val onlyClientCompetitionState: PartialFunction[CompetitionState, ClientCompetitionState] = {
+    case cc: ClientCompetitionState => cc
   }
-  
+
   lazy val plan = HttpService {
     case GET -> routes.Competitions(_) =>
       val content = presentation.Collection(service.allCompetitions.collect(onlyClientCompetitionState).map(toPresentation(_, None)))
@@ -128,10 +185,10 @@ class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRo
         case \/-(st) =>
           println(st)
           st match {
-            case v:ClientCompetitionState =>
+            case v: ClientCompetitionState =>
               val content = toPresentation(v, Some(pid))
               Ok(responseBody(content))
-              
+
             case _ => NotFound()
           }
       } getOrElse (NotFound())
@@ -139,25 +196,26 @@ class CompetitionsPlan(_routes: => CompetitionRoutes, _playerRoutes: => PlayerRo
     case POST -> routes.DeclineCompetition(id, pid) =>
       service.declineCompetition(pid, id, None).map {
         case -\/(err) => InternalServerError(err.toString)
-        case \/-(v:ClientCompetitionState) =>
+        case \/-(v: ClientCompetitionState) =>
           val content = toPresentation(v, Some(pid))
           Ok(responseBody(content))
         case _ => NotFound()
       } getOrElse (NotFound())
 
-      
     case req @ POST -> routes.CreateCompetition(pid) =>
-      ParseBody[presentation.Input.Competition](req) { errOrComp => 
+      ParseBody[presentation.Input.Competition](req) { errOrComp =>
         errOrComp match {
           case -\/(err) => InternalServerError(err.toString)
-          case \/-(comp) => 
-            service.createCompetition(pid, comp.players, comp.kind, comp.deadline) match {
-              case -\/(err) => InternalServerError(err.toString)
-              case \/-(content:ClientCompetitionState) => Ok(responseBody( toPresentation(content, Some(pid))))
-              case _ => NotFound()
-            }
+          case \/-(comp) =>
+            toModel(comp.players).map { gamePlayers =>
+              service.createCompetition(pid, gamePlayers, comp.kind, comp.deadline) match {
+                case -\/(err) => InternalServerError(err.toString)
+                case \/-(content: ClientCompetitionState) => Ok(responseBody(toPresentation(content, Some(pid))))
+                case _ => NotFound()
+              }
+            }.toOption.getOrElse(BadRequest())
         }
-      } 
+      }
   }
 
 }

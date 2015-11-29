@@ -1,27 +1,7 @@
 package org.obl.briscola.web
 
-import org.eclipse.jetty.server.ServerConnector
-import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.servlet.ServletContextHandler
-import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
-import javax.websocket.server.ServerContainer
-import javax.websocket.server.ServerEndpointConfig
-import org.obl.raz._
-import org.http4s.server._
-import org.http4s.servlet.Http4sServlet
-import org.eclipse.jetty.servlet.ServletHolder
-import org.eclipse.jetty.util.resource.Resource
-import org.eclipse.jetty.webapp.WebAppContext
-import org.obl.briscola.web.util.ServletContextPlanAdder._
-import org.obl.briscola.web.util.WSEndPointAdder._
-import org.obl.briscola.service._
-import javax.servlet.ServletContext
-import org.eclipse.jetty.util.component.LifeCycle
-import org.obl.briscola.web.util.Containerconfigurator
-import org.obl.briscola.web.util.Plan
-import org.obl.briscola.web.util.ServletPlan
-
-import org.obl.briscola.web.util.{JettyWebAppConfig, JettyServerFactory}
+import org.obl.briscola.web.util.JettyServerFactory
+import org.obl.briscola.web.util.JettyWebAppConfig
 
 
 object AppConfigFactory {

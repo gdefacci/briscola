@@ -20,12 +20,14 @@ class BriscolaWebApp(routes:AppRoutes, val app:BriscolaApp) {
   
   lazy val competitionPresentationAdapter = CompetitionPresentationAdapter(routes.playerRoutes, routes.competitionRoutes)
   
+  lazy val gamePlayersInputAdapter = GamePlayersInputAdapter(routes.playerRoutes)
+  
   lazy val playersPlan = new PlayersPlan(routes.playerRoutes, app.playerService, 
       playerPresentationAdapter, gamePresentationAdapter, competitionPresentationAdapter) 
   
   lazy val gamesPlan = new GamesPlan(routes.gameRoutes, app.gameService, gamePresentationAdapter) 
   
-  lazy val competitionsPlan = new CompetitionsPlan(routes.competitionRoutes, routes.playerRoutes, app.competitionService, competitionPresentationAdapter) 
+  lazy val competitionsPlan = new CompetitionsPlan(routes.competitionRoutes, app.competitionService, competitionPresentationAdapter, gamePlayersInputAdapter) 
   
   lazy val siteMap = 
     presentation.SiteMap(routes.playerRoutes.Players.encodePath, routes.playerRoutes.PlayerLogin.encodePath)
