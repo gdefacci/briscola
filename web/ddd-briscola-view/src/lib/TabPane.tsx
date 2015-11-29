@@ -2,6 +2,9 @@ import ReactElement = React.ReactElement
 import {isNull} from "flib"
 
 export interface TabPaneProps {
+  /**
+   * fixme: remove classes, replace with function layout(mainArea, activators) => ReactElement
+   */
   classes?:TabPaneClasses
   panes:TabPaneItem[]
 }
@@ -18,19 +21,19 @@ export interface TabPaneItem {
 }
 
 export interface TabPaneState {
-  current:number  
+  current:number
 }
 
 export class TabPane extends React.Component<TabPaneProps, TabPaneState> {
   state = {
-    current:0  
+    current:0
   }
   render() {
     const props = this.props
     const currIdx = this.state.current
     const curr = props.panes[currIdx]
     const mainArea:ReactElement<any> = isNull(curr) ? (<div>missing pane</div>) : (curr.content(currIdx));
-    const activators:ReactElement<any>[] = props.panes.map( (pane, idx) => 
+    const activators:ReactElement<any>[] = props.panes.map( (pane, idx) =>
       pane.activator((idx === currIdx), () => { this.setState({ current:idx }) }, idx )
     )
     return (
@@ -42,7 +45,7 @@ export class TabPane extends React.Component<TabPaneProps, TabPaneState> {
           {activators}
         </div>
       </div>
-    );  
+    );
   }
 }
 

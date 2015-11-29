@@ -97,25 +97,21 @@ export class TeamsGameResult {
 
 const gameResultChoice = Selector.byPropertyExists([{ key:"playersOrderByPoints", value:PlayersGameResult }, { key:"teamsOrderByPoints", value:TeamsGameResult }])
 
-/*
-const gameResultChoice = Selector.create( a => {
-  if (a["playersOrderByPoints"]) return Option.some(PlayersGameResult)
-  else if (a["teamsOrderByPoints"]) return Option.some(TeamsGameResult)
-  else return Option.none<JsConstructor<GameResult>>();
-})
-*/
-
 export class FinalGameState {
   self: Path
 
   @convert()
   briscolaCard: Card
 
+  @convert(gameResultChoice)
+  gameResult:GameResult
+  /*
   @convert({ arrayOf:PlayerFinalState })
   playersOrderByPoints: PlayerFinalState[]
 
   @convert()
   winner: PlayerFinalState
+  */
 }
 
 export class ActiveGameState {

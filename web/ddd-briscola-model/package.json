@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "flib": "0.1.1",
-    "rest-fetch": "0.2.0"
+    "rest-fetch": "0.2.1"
   },
   "scripts": {
     "clean":"rimraf index.js* index.d.ts ddd-briscola-model-test.browser.* test lib",

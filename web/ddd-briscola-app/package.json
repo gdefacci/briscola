@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "flib": "0.1.1",
-    "rest-fetch": "0.1.0",
+    "rest-fetch": "0.2.1",
     "ddd-briscola-model": "file:../ddd-briscola-model",
     "rx": "3.1.2"
   },

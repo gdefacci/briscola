@@ -7,7 +7,7 @@ import {DomainEvent, Path, Input, eventAndStateChoice,
   CompetitionEventAndState, CompetitionEvent, CompetitionState, CompetitionEventKind, CompetitionStateKind,
   PlayerEventAndState, CurrentPlayer, Player, PlayerEvent, PlayerEventKind} from "ddd-briscola-model"
 
-import {fetch, fetchChoose, ConstructorType} from "rest-fetch"
+import {fetch, fetchChoose} from "rest-fetch"
 
 function gamesMap(ch: Rx.Observable<GameEventAndState>): (p: Path) => Option<GameState> {
   const mapOfGames: JsMap<GameState> = {}
@@ -69,7 +69,7 @@ export class PlayerService {
           err => {
             console.log("error parsing web socket message")
             console.log(`error ${err}`)
-            console.log(err.stack)
+            if (err && err.stack) console.log(err.stack)
             console.log(data)
             return Promise.reject(`error fetching event and state ${data}, error : ${err}`)
           }

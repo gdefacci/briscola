@@ -159,9 +159,8 @@ function showCompetitionButton(board: Model.Board): boolean {
   return (len >= board.config.minPlayersNumber) && (len <= board.config.maxPlayersNumber)
 }
 
-function playersResultsTabPaneItems(gm: Model.FinalGameState):TabPaneItem[] {
-  return gm.playersOrderByPoints.map( pl => {
-    const total = Arrays.foldLeft(pl.score.cards, 0, (acc, card) => acc + card.points)
+function playersGameResultTabPaneItems(gameRes:Model.PlayersGameResult):TabPaneItem[] {
+  return gameRes.playersOrderByPoints.map( pl => {
     const r:TabPaneItem = {
       activator:(selected:boolean, selectItem:() => void, idx:number) => {
         return <span key={idx}><button onClick={ ev => selectItem() }>{pl.player.name}</button></span>
@@ -171,6 +170,28 @@ function playersResultsTabPaneItems(gm: Model.FinalGameState):TabPaneItem[] {
           <div>
             {playerDeckSummaryCards(pl.score.cards)}
             <div className={cssClasses.playerDeckSummary}>
+              <span>{pl.points}</span>
+            </div>
+          </div>
+        );
+      }
+    }
+    return r;
+  })
+}
+
+function teamGameResultTabPaneItems(gameRes:Model.TeamsGameResult):TabPaneItem[] {
+  return gameRes.teamsOrderByPoints.map( teamScore => {
+    const total = teamScore.points
+    const r:TabPaneItem = {
+      activator:(selected:boolean, selectItem:() => void, idx:number) => {
+        return <span key={idx}><button onClick={ ev => selectItem() }>{teamScore.teamName} : {teamScore.players.map( pl => pl.name ).join(", ")}</button></span>
+      },
+      content:() => {
+        return (
+          <div>
+            {playerDeckSummaryCards(teamScore.cards)}
+            <div className={cssClasses.playerDeckSummary}>
               <span>{total}</span>
             </div>
           </div>
@@ -179,6 +200,13 @@ function playersResultsTabPaneItems(gm: Model.FinalGameState):TabPaneItem[] {
     }
     return r;
   })
+}
+
+function playersResultsTabPaneItems(gm: Model.FinalGameState):TabPaneItem[] {
+  const gmRes = gm.gameResult
+  if (gmRes instanceof Model.TeamsGameResult) return teamGameResultTabPaneItems(gmRes)
+  else if (gmRes instanceof Model.PlayersGameResult) return playersGameResultTabPaneItems(gmRes)
+  throw new Error("unexcepted "+gm)
 }
 
 class Game extends React.Component<EditableGameProps<Model.GameState>, void> {
