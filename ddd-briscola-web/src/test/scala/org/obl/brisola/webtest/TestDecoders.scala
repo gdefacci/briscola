@@ -11,6 +11,7 @@ import argonaut.CursorHistory
 import scalaz.{-\/, \/, \/-}
 import org.obl.raz.Path
 import argonaut.JObject
+import org.obl.briscola.web.util.ArgonautHelper
 
 trait TestDecoders {
   
@@ -63,6 +64,7 @@ trait TestDecoders {
 //    
 //  }
   
+    
   implicit lazy val competitionStateDecode = {
     implicit val matchKindDecode = {
       val singleMatchDecode = DecodeJson[MatchKind] { j =>
@@ -86,8 +88,12 @@ trait TestDecoders {
       }
       allPlayersDecode ||| DecodeJson.derive[OnPlayerCount].map(d => d:CompetitionStartDeadline)
     }
-    
-//    DecodeJson.derive[CompetitionState]
+
+    implicit lazy val competitionDecode = DecodeJson.derive[Competition] 
+  
+    implicit lazy val competitionStateKindDecoder = ArgonautHelper.enumDecoder(CompetitionStateKind) 
+
+    DecodeJson.derive[CompetitionState]
   }
   
   def decode[T](str:String)(implicit dj:DecodeJson[T]) = {

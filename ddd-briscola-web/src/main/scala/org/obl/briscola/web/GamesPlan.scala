@@ -1,6 +1,7 @@
 package org.obl.briscola
 package web
 
+import org.http4s.HttpService
 import org.http4s.server._
 import org.http4s.dsl._
 import org.obl.raz.PathCodec

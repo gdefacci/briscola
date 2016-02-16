@@ -5,7 +5,7 @@ import scala.util.Properties.envOrNone
 
 object BriscolaBuild extends Build {
 
-  lazy val http4sVersion = "0.10.0"
+  lazy val http4sVersion = "0.12.1"
   
   lazy val http4s = Seq(
     "org.http4s" %% "http4s-dsl"          % http4sVersion,
@@ -16,11 +16,11 @@ object BriscolaBuild extends Build {
     "org.http4s" %% "http4s-argonaut"     % http4sVersion
   )
  
-  lazy val scalazCore = "org.scalaz" %% "scalaz-core" % "7.1.3" 
+  lazy val scalazCore = "org.scalaz" %% "scalaz-core" % "7.1.7" 
   
   lazy val rx = Seq(
-    "io.reactivex" %% "rxscala" % "0.25.0",
-    "io.reactivex" % "rxjava" % "1.0.14"
+    "io.reactivex" %% "rxscala" % "0.26.0",
+    "io.reactivex" % "rxjava" % "1.1.1"
   )
   
   val razVersion = "0.7-SNAPSHOT"
@@ -48,13 +48,13 @@ object BriscolaBuild extends Build {
   )
   
   lazy val scalaCheck = Seq(
-    "org.scalacheck" %% "scalacheck" % "1.12.5",
+    "org.scalacheck" %% "scalacheck" % "1.13.0",
     "org.cvogt" %% "scalacheck-extensions" % "0.2"
   )
 
   lazy val databinderDispatch = "net.databinder.dispatch" %% "dispatch-core" % "0.11.3"
   
-  lazy val scalaTest = "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+  lazy val scalaTest = "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 
 
   //lazy val scalazSpec2 = "org.typelevel" %% "scalaz-specs2" % "0.4.0"

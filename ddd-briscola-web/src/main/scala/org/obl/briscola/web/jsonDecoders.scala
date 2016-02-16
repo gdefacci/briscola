@@ -29,7 +29,7 @@ object jsonDecoders {
     ) yield Card(number.toByte, seed)
   }
 
-  private implicit lazy val matchKindDecoder: DecodeJson[MatchKind] = {
+  implicit lazy val matchKindDecoder: DecodeJson[MatchKind] = {
 
     lazy val singleMatchDecoder = fromMap[String, MatchKind](Map("single-match" -> SingleMatch), s"invalid MatchKind") 
 
@@ -40,15 +40,9 @@ object jsonDecoders {
     singleMatchDecoder ||| numberOfGamesMatchKindEncoder ||| targetPointsMatchKindEncoder
   }
 
-  private implicit lazy val competitionStartDeadlineDecoder: DecodeJson[CompetitionStartDeadline] = {
+  implicit lazy val competitionStartDeadlineDecoder: DecodeJson[CompetitionStartDeadline] = {
 
     lazy val allPlayersDecoder = fromMap[String, CompetitionStartDeadline](Map("all-players" -> CompetitionStartDeadline.AllPlayers), s"invalid MatchKind") 
-//      DecodeJson[CompetitionStartDeadline] { j =>
-//      j.as[String].flatMap {
-//        case "all-players" => DecodeResult.ok(CompetitionStartDeadline.AllPlayers)
-//        case x => DecodeResult.fail(s"invalid MatchKind: $x", j.history)
-//      }
-//    }
 
     lazy val onPlayerCountEncoder = DecodeJson.derive[CompetitionStartDeadline.OnPlayerCount].map[CompetitionStartDeadline](p => p)
 

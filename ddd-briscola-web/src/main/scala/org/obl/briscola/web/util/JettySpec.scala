@@ -7,7 +7,7 @@ trait JettySpec {
 
   def jettyConfig: JettyWebAppConfig
 
-  private lazy val server = JettyServerFactory.createServer(jettyConfig)
+  private val server:Server = JettyServerFactory.createServer(jettyConfig)
 
   private val serverThread = new Thread() {
 
@@ -26,6 +26,8 @@ trait JettySpec {
 
   def stopServer() = {
     server.stop()
+    while (server.isStarted)
+      Thread.sleep(10)
   }
 
   lazy val host = server.getURI.getHost

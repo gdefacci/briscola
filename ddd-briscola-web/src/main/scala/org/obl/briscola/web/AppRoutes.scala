@@ -49,7 +49,7 @@ class AppRoutesImpl(val config:RoutesServletConfig) extends AppRoutes {
   val playerWebSocketRoutes = new PlayerWebSocketRoutes with BaseRoutes {
     private val playerById      = resources.WebSockets.Players.byId
     
-    val PlayerById              = playerById.toPathConverter.encodersWrap.decoderWrap
+    val PlayerById              = playerById.toPathConverter.wrap
     val playerByIdUriTemplate   = playerById.toUriTemplate("playerId")
   }
   

@@ -9,6 +9,9 @@ import org.obl.raz.PathPosition
 import org.obl.raz.PathConverter
 import org.obl.raz.Path
 import org.obl.raz.PathDecoder
+import org.obl.raz.PathEncoder
+import org.obl.raz.UriTemplateEncoder
+import org.http4s.HttpService
 
 trait Plan {
 
@@ -41,7 +44,7 @@ trait PrefixedRoutes {
   protected def prefix:PathSg
 
   implicit class PathWrapper(p: Path) {
-    def decoderWrap: PathDecoder[Path] =
+    private def decoderWrap1: PathDecoder[Path] =
       Path(Path.baseOf(p), prefix.add(p.path), p.params, p.fragment)
 
     def encodersWrap = { 
@@ -52,7 +55,7 @@ trait PrefixedRoutes {
   }
 
   implicit class PathCodecWrapper[D, E](codec: PathCodec[D, E]) {
-    def decoderWrap: PathDecoder[D] =
+    def absolute: PathDecoder[D] =
       PathDecoder.prepend(prefix, codec)
 
     def encodersWrap =
@@ -60,12 +63,17 @@ trait PrefixedRoutes {
   }
 
   implicit class PathConverterWrapper[D, E, UT, P <: PathPosition, S <: PathPosition](converter: PathConverter[D, E, UT, P, S]) {
-    def decoderWrap: PathConverter[D, E, UT, P, S] =
+    private def decoderWrap: PathConverter[D, E, UT, P, S] =
       PathConverter[D, E, UT, P, S](PathDecoder.prepend(prefix, converter), converter, converter)
 
-    def encodersWrap =
+    private def encodersWrap =
       PathConverter.encodersAt(host, PathConverter.prependEncoders(prefix, converter))
 
+    def wrap =  
+      PathConverter[D, E, UT, P, S](PathDecoder.prepend(prefix, converter), 
+          PathEncoder.at(host, PathEncoder.prepend(prefix, converter)),
+          UriTemplateEncoder.at(host, UriTemplateEncoder.prepend(prefix, converter)))
+      
   }
 
 }

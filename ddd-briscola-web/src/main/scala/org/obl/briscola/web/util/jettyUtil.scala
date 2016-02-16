@@ -26,13 +26,17 @@ object JettyWebAppConfig {
   }
   
   def apply(port:Int, contextPath:String, plan:ServletPlan, plans:ServletPlan*):JettyWebAppConfig = {
+    val allPlans = plan +: plans
+    apply(port, contextPath, allPlans)    
+  }
+  
+  def apply(port:Int, contextPath:String, allPlans:Seq[ServletPlan]):JettyWebAppConfig = {
     val context = JettyWebAppConfig.defaultWebAppContext()
     context.setContextPath((if (contextPath.startsWith("/")) "" else "/") + contextPath);
     JettyWebAppConfig(port, context, new Containerconfigurator {
       def configureWerbSockets(container: ServerContainer) = {}
       def configureWeb(context: ServletContext) = {
-        context.addPlan(plan)
-        plans.foreach(context.addPlan(_))
+        allPlans.foreach(context.addPlan(_))
       }
     })
   }

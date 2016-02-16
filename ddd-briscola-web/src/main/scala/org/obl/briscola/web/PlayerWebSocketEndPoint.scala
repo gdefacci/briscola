@@ -50,6 +50,9 @@ object PlayerSocketConfig {
   
 }
 
+/**
+ * FIXME:gameStateChangeFilter e' inutile, passare direttamente changes.collect(gameStateChangeFilter)
+ */
 class BasePlayerSocketConfig[S,E,PS,PE](
     changes: => Observable[StateChange[S, E]],
     gameStateChangeFilter: StateChangeFilter[S, E, PS, PE])(implicit ej: EncodeJson[EventAndState[PE, PS]]) extends PlayerSocketConfig {

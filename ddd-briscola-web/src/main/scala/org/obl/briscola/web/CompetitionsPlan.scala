@@ -106,7 +106,7 @@ trait GamePlayersInputAdapter {
 
   def apply(teamPlayer: presentation.Input.TeamPlayer): Throwable \/ org.obl.briscola.player.TeamPlayer = {
     import playerRoutes._
-    val pidDecoder = playerRoutes.PlayerById.decoderWrap
+    val pidDecoder = playerRoutes.PlayerById.absolute
     pidDecoder.decodeFull(teamPlayer.player).map { pid =>
       org.obl.briscola.player.TeamPlayer(pid, teamPlayer.teamName)
     }
@@ -124,7 +124,7 @@ trait GamePlayersInputAdapter {
         val z: Throwable \/ Set[PlayerId] = \/-(Set.empty[PlayerId])
         players.foldLeft(z) { (acc, path) =>
           acc.flatMap { pids =>
-            val pidDecoder = playerRoutes.PlayerById.decoderWrap
+            val pidDecoder = playerRoutes.PlayerById.absolute
             pidDecoder.decodeFull(path).map(pid => pids + pid)
           }
         }.map(org.obl.briscola.player.Players(_))

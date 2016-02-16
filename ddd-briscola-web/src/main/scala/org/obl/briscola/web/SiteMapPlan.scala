@@ -1,5 +1,6 @@
 package org.obl.briscola.web
 
+import org.http4s.HttpService
 import org.http4s.server._
 import org.http4s.dsl._
 import org.obl.raz.http4s.RazHttp4s._
