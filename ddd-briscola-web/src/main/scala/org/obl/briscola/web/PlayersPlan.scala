@@ -87,7 +87,7 @@ class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
 
     case GET -> routes.Players(_) =>
       val content = presentation.Collection(service.allPlayers.map(toPresentation(_)))
-      Ok(responseBody(content))
+      Ok(asJson(content))
 
     case req @ POST -> routes.Players(_) =>
       ParseBody[presentation.Input.Player](req) { errOrPlayer =>
@@ -98,7 +98,7 @@ class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
               case -\/(err) => InternalServerError(err.toString)
               case \/-(content) => {
                 implicit val playerEncoder = jsonEncoders.privatePlayerEncoder
-                Ok(responseBody(toPresentation(content)))
+                Ok(asJson(toPresentation(content)))
               }
             }
 
@@ -114,7 +114,7 @@ class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
               case -\/(err) => InternalServerError(err.toString)
               case \/-(content) => {
                 implicit val playerEncoder = jsonEncoders.privatePlayerEncoder
-                Ok(responseBody(toPresentation(content)))
+                Ok(asJson(toPresentation(content)))
               }
             }
 
@@ -123,7 +123,7 @@ class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
 
     case GET -> routes.PlayerById(id) =>
       service.playerById(id).map((p: Player) => toPresentation(p)) match {
-        case Some(content) => Ok(responseBody(content))
+        case Some(content) => Ok(asJson(content))
         case None => NotFound()
       }
 
@@ -136,7 +136,7 @@ class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
     //          case (e:ClientCompetitionEvent, s:ClientCompetitionState) => e -> s
     //        }.subscribe { (evComp) =>
     //          val (event, state) = evComp
-    //          val resp = WebsocketBits.Text(responseBody(EventAndState(competitionToPresentation(state.id, event, pid), competitionToPresentation(state, Some(pid)))))
+    //          val resp = WebsocketBits.Text(asJson(EventAndState(competitionToPresentation(state.id, event, pid), competitionToPresentation(state, Some(pid)))))
     //          src.enqueueOne(resp).run
     //        }
     //        pch.games.subscribe { (evGm) =>
@@ -147,13 +147,13 @@ class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
     //            case gm:FinalGameState => Some(gm.id)
     //          }
     //          id.foreach { id =>
-    //            val resp = WebsocketBits.Text(responseBody(EventAndState(gameToPresentation(id, event, pid), gameToPresentation(state, Some(pid)))))
+    //            val resp = WebsocketBits.Text(asJson(EventAndState(gameToPresentation(id, event, pid), gameToPresentation(state, Some(pid)))))
     //            src.enqueueOne(resp).run                
     //          }
     //        }
     //        pch.players.subscribe { (evPl) =>
     //          val (event, state) = evPl
-    //          val resp = WebsocketBits.Text(responseBody(EventAndState(toPresentation(event), toPresentation(state))))
+    //          val resp = WebsocketBits.Text(asJson(EventAndState(toPresentation(event), toPresentation(state))))
     //          src.enqueueOne(resp).run
     //        }
     //        WS(Exchange(src.dequeue, output.enqueue))

@@ -5,14 +5,18 @@ import org.http4s.servlet.Http4sServlet
 import scala.language.implicitConversions
 import javax.servlet.ServletContext
 import javax.websocket.server.ServerContainer
+import com.typesafe.scalalogging.Logger
+import org.slf4j.LoggerFactory
 
 class ServletContextPlanAdder(context:ServletContext) {
   
+  lazy val logger = Logger(LoggerFactory.getLogger(getClass))
+  
   def addPlan(plan:ServletPlan) = {
     val pth = plan.servletPath.path.mkString("/")
-    println("*"*80)
+    logger.debug("*"*80)
     val servletPath = s"/$pth/*"
-    println(s"adding plan ${plan.getClass.getName} at path '$servletPath'")
+    logger.debug(s"adding plan ${plan.getClass.getName} at path '$servletPath'")
     val cfg = context.addServlet(plan.getClass.getName, new Http4sServlet(plan.plan))
     cfg.addMapping(servletPath)
     cfg.setAsyncSupported(true)

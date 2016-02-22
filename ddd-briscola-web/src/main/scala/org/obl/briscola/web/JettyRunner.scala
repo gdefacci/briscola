@@ -12,7 +12,7 @@ object AppConfigFactory {
 
   val configurator = new BriscolaContainerConfigurator[ConcretePlayerWebSocketEndPoint](webAppConfig)
 
-  def create: JettyWebAppConfig = {
+  lazy val create: JettyWebAppConfig = {
     val context = JettyWebAppConfig.defaultWebAppContext()
     context.setContextPath("/" + webAppConfig.routesConfig.contextPath.path.mkString("/"));
     JettyWebAppConfig(webAppConfig.routesConfig.host.port, context, configurator)
@@ -21,7 +21,9 @@ object AppConfigFactory {
 
 object JettyRunner extends App {
 
-  val server = JettyServerFactory.createServer(AppConfigFactory.create)
+  val appcfg = AppConfigFactory
+  
+  val (server,_) = JettyServerFactory.createServers(appcfg.create)
 
   server.start();
   server.dump(System.err);

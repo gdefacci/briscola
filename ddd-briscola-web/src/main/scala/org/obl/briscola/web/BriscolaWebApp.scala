@@ -1,16 +1,16 @@
 package org.obl.briscola.web
 
+import scala.reflect.ClassTag
+
 import org.obl.briscola.presentation
-import org.obl.raz.BasePath
-import org.obl.raz.BasePosition
-import org.obl.raz.SegmentPosition
 import org.obl.briscola.service.BriscolaApp
 import org.obl.briscola.web.util.Containerconfigurator
+import org.obl.briscola.web.util.ServletContextPlanAdder.toJettyPlanAdder
+import org.obl.briscola.web.util.WSEndPointAdder.toWSEndPointAdder
+
 import javax.servlet.ServletContext
-import org.obl.briscola.web.util.ServletContextPlanAdder._
-import org.obl.briscola.web.util.WSEndPointAdder._
+import javax.websocket.Endpoint
 import javax.websocket.server.ServerContainer
-import scala.reflect.ClassTag
 
 class BriscolaWebApp(routes:AppRoutes, val app:BriscolaApp) {
   
@@ -33,18 +33,25 @@ class BriscolaWebApp(routes:AppRoutes, val app:BriscolaApp) {
     presentation.SiteMap(routes.playerRoutes.Players.encodePath, routes.playerRoutes.PlayerLogin.encodePath)
   
   lazy val siteMapPlan = new SiteMapPlan(routes.siteMapRoutes, siteMap) 
+
+  import jsonEncoders._
+  
+  lazy val gamePlayerChannels:WsPlayerChannel = new WsPlayerChannelImpl(app.gameService.changes, new GamesStateChangeFilter(app.gameService, gamePresentationAdapter))
+  lazy val playerPlayerChannels:WsPlayerChannel = new WsPlayerChannelImpl(app.playerService.changes, new PlayersStateChangeFilter(playerPresentationAdapter))
+  lazy val competitionPlayerChannels:WsPlayerChannel = new WsPlayerChannelImpl(app.competitionService.changes, new CompetitionsStateChangeFilter(app.competitionService, competitionPresentationAdapter))
+  
   
   lazy val playerSocketConfig:PlayerSocketConfig = {
-    import jsonEncoders._
     
-    val gmCfg = new BasePlayerSocketConfig(app.gameService.changes, new GamesStateChangeFilter(app.gameService, gamePresentationAdapter))
-    val compCfg = new BasePlayerSocketConfig(app.competitionService.changes, new CompetitionsStateChangeFilter(app.competitionService, competitionPresentationAdapter))
-    val playerCfg = new BasePlayerSocketConfig(app.playerService.changes, new PlayersStateChangeFilter(playerPresentationAdapter))
+    val gmCfg = new BasePlayerSocketConfig(gamePlayerChannels)
+    val compCfg = new BasePlayerSocketConfig(competitionPlayerChannels)
+    val playerCfg = new BasePlayerSocketConfig(playerPlayerChannels)
     
     PlayerSocketConfig(Seq(gmCfg, compCfg, playerCfg))
   }
   
 }
+
 
 class BriscolaWebAppConfig(val routesConfig: RoutesServletConfig, app: BriscolaApp) {
   lazy val routes:AppRoutes = AppRoutesImpl(routesConfig)
@@ -54,7 +61,7 @@ class BriscolaWebAppConfig(val routesConfig: RoutesServletConfig, app: BriscolaA
 
 }
 
-class BriscolaContainerConfigurator[T <: PlayerWebSocketEndPoint](config:BriscolaWebAppConfig)(implicit classTag:ClassTag[T]) extends Containerconfigurator {
+class BriscolaContainerConfigurator[T <: Endpoint](config:BriscolaWebAppConfig)(implicit classTag:ClassTag[T]) extends Containerconfigurator {
 
   def configureWerbSockets(container: ServerContainer) = {
     container.addWebSocketEndPoint[T](config.routes.playerWebSocketRoutes.playerByIdUriTemplate)

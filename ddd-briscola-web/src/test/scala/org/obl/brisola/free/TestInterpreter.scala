@@ -1,63 +1,70 @@
 package org.obl.brisola.free
 
-import scalaz.Free
+import java.util.concurrent.TimeUnit
+import scala.annotation.elidable
+import scala.annotation.elidable.ASSERTION
+import scala.annotation.tailrec
 import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success, Try}
-import org.obl.raz.Path
-import org.obl.brisola.webtest.TestDecoders
-import argonaut.JsonParser
-import scalaz.{-\/, \/, \/-}
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.SECONDS
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+import org.eclipse.jetty.websocket.api.Session
+import org.eclipse.jetty.websocket.api.WebSocketAdapter
+import org.eclipse.jetty.websocket.client.WebSocketClient
 import com.ning.http.client.Response
-import argonaut.DecodeJson
-import org.obl.briscola.presentation.SiteMap
+import argonaut.JsonParser
+import dispatch.Http
+import dispatch.implyRequestHandlerTuple
+import dispatch.url
+import rx.lang.scala.Observable
+import rx.lang.scala.Subject
+import rx.lang.scala.subjects.PublishSubject
+import scalaz.{ -\/ => -\/ }
+import scalaz.{ \/- => \/- }
+import rx.lang.scala.subjects.ReplaySubject
 
-case class TestInterpreterConfig(secondsTimeout:Int, siteMapUrl:String, siteMapDecoder:DecodeJson[SiteMap])
+case class TestInterpreterConfig(secondsTimeout: Int)
 
 sealed trait TestResult
 
-case class Error(error:Throwable) extends TestResult
+case class Error(error: Throwable) extends TestResult
 case class Assert(value: Boolean, description: String) extends TestResult
 
-class TestInterpreter(config:TestInterpreterConfig) {
-  
-  def apply(step:Step.FreeStep[Any]):Seq[TestResult] = apply(step, Nil)
-  
-  private def apply(step:Step.FreeStep[Any], current:Seq[TestResult]):Seq[TestResult] = step.resume.fold( {
-    
+class TestInterpreter(config: TestInterpreterConfig) {
+
+  def apply(step: Step.FreeStep[Any]): Seq[TestResult] = apply(step, Nil)
+
+  private def apply(step: Step.FreeStep[Any], current: Seq[TestResult]): Seq[TestResult] = step.resume.fold({
+
     case Check(v, desc, next) =>
-      Assert(v,desc) +: apply(next, current)
-    
+      Assert(v, desc) +: apply(next, current)
+
     case HTTPCall(method, pth, body, next) =>
       val resp = httpCall(method, pth, body)
       resp match {
         case Failure(err) => current :+ Error(err)
         case Success(v) => apply(next(v), current)
       }
-      
+
     case Parse(text, decoder, next) =>
-      val resp = JsonParser.parse(text).flatMap( decoder.decodeJson(_).toDisjunction )
+      val resp = JsonParser.parse(text).flatMap(decoder.decodeJson(_).toDisjunction)
       resp match {
         case -\/(err) => current :+ Error(new RuntimeException(s"error parsing json, error: $err \n$text"))
         case \/-(v) => apply(next(v), current)
       }
-    
-    case GetSiteMap(next) =>
-      val httpResp = httpCall(GET, config.siteMapUrl,  None)
-      val resp = httpResp.map { httpResp =>
-        httpResp.getResponseBody -> JsonParser.parse(httpResp.getResponseBody).flatMap( config.siteMapDecoder.decodeJson(_).toDisjunction ) 
+
+    case WebSocket(url, next) =>
+      webSocket(url) match {
+        case Failure(err) => current :+ Error(new RuntimeException(s"error opening websocket at '$url'' error: $err"))
+        case Success(v) => apply(next(v), current)
       }
-      resp match {
-        case Failure(err) => current :+ Error(err)
-        case Success((text, -\/(err))) => current :+ Error(new RuntimeException(s"error parsing json, error: $err \n$text"))
-        case Success((text, \/-(v))) => apply(next(v), current)
-      }
-      
-      
+
   }, _ => current)
- 
-  private def httpCall(method:HTTPMethod, pth:String, body:Option[String]):Try[Response] = {
+
+  private def httpCall(method: HTTPMethod, pth: String, body: Option[String]): Try[Response] = {
     import dispatch._
     val req0 = url(pth).setMethod(method.toString).setContentType("application/json", "UTF-8")
     val req = body match {
@@ -66,4 +73,44 @@ class TestInterpreter(config:TestInterpreterConfig) {
     }
     Await.ready(Http(req > (i => i)), Duration(config.secondsTimeout, SECONDS)).value.get
   }
+
+  private def webSocket(url: String): Try[Observable[String]] = {
+    Try {
+      val uri = java.net.URI.create(url);
+      val client = new WebSocketClient();
+      client.start();
+      val subj = ReplaySubject[String]
+      lazy val socket: WebSocketAdapter = new ObservableWebSocketAdapter(subj, client, config.secondsTimeout)
+      val sess = client.connect(socket, uri).get(config.secondsTimeout, TimeUnit.SECONDS)
+      assert( sess.isOpen(), s"web socket session for url $url is not open" )
+      subj
+    }
+  }
+}
+
+class ObservableWebSocketAdapter(subj: => Subject[String], client:WebSocketClient, private var seconds:Int) extends WebSocketAdapter {
+  val timer = Observable.timer(Duration(seconds, SECONDS)) 
+
+  timer.subscribe(v => (), v => (), () => close())
+  
+  override def onWebSocketConnect(sess:Session) {
+  }
+  
+  override def onWebSocketText(text: String) {
+    subj.onNext(text)
+  }
+  def close() {
+    subj.onCompleted()
+    if (getSession != null) getSession.close();
+    client.stop()
+    client.destroy()
+  }
+  
+  override def onWebSocketError(cause: Throwable) {
+    subj.onError(cause);
+  }
+  override def onWebSocketClose(statusCode: Int, reason: String) {
+    close()
+  }
+
 }

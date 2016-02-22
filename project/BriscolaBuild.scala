@@ -30,10 +30,12 @@ object BriscolaBuild extends Build {
     "org.obl" %% "raz-http4s" % razVersion
   )
   
+  /*
   lazy val slf4j = Seq(
     "org.slf4j" % "slf4j-api" % "1.7.5",
     "org.slf4j" % "slf4j-simple" % "1.7.5"
   )
+  */
 
   lazy val jettyVersion = "9.3.2.v20150730"  
   
@@ -56,6 +58,11 @@ object BriscolaBuild extends Build {
   
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 
+  lazy val logging = {
+    val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0"
+    val slf4jLog4j = "org.slf4j" % "slf4j-log4j12" % "1.7.16"
+    Seq(scalaLogging, slf4jLog4j)
+  }
 
   //lazy val scalazSpec2 = "org.typelevel" %% "scalaz-specs2" % "0.4.0"
   

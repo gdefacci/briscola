@@ -16,7 +16,7 @@ class SiteMapPlan(_routes: => SiteMapRoutes, siteMap: => presentation.SiteMap) e
   import jsonEncoders.siteMapEncoder
 
   lazy val plan = HttpService {
-    case GET -> routes.SiteMap(_) => Ok( responseBody(siteMap) )    
+    case GET -> routes.SiteMap(_) => Ok( asJson(siteMap) )    
   }
   
 }

@@ -1,0 +1,276 @@
+package org.obl.brisola.free
+
+import org.obl.brisola.webtest.TestDecoders
+import org.obl.briscola.presentation.Player
+import org.obl.briscola.web.jsonDecoders._
+import org.obl.raz.Path
+import org.obl.briscola.presentation.SiteMap
+import com.ning.http.client.Response
+import org.obl.briscola.web.util.JettyServerFactory
+import javax.websocket.Endpoint
+import javax.websocket.Session
+import javax.websocket.EndpointConfig
+import javax.websocket.CloseReason
+import org.obl.briscola.web.BriscolaContainerConfigurator
+import org.obl.briscola.web.util.JettyWebAppConfig
+import argonaut.DecodeJson
+import rx.lang.scala.Observable
+import argonaut.JsonParser
+import org.obl.briscola.presentation.CreatedCompetition
+import rx.lang.scala.Observer
+import rx.lang.scala.observers.TestSubscriber
+import rx.observers.TestObserver
+import rx.lang.scala.JavaConversions
+import org.obl.briscola.presentation.EventAndState
+import org.obl.briscola.presentation.CreatedCompetition
+import org.obl.briscola.presentation.CompetitionState
+import com.typesafe.scalalogging.Logger
+import org.slf4j.LoggerFactory
+
+trait SiteMapClient { self: TestDecoders =>
+  import Step._
+
+  protected def siteMapUrl: String
+
+  def getSiteMap = for {
+    resp <- get(siteMapUrl)
+    siteMap <- parse[SiteMap](resp.getResponseBody)
+  } yield siteMap
+
+}
+
+case class Scenario(description: String, step: Step.FreeStep[Any])
+
+trait HttpTestHelper {
+
+  def isSuccess(code: Int) = code >= 200 && code < 300
+
+}
+
+trait RxTestHelper {
+
+  private lazy val log = Logger(LoggerFactory.getLogger(getClass))
+  
+  def contains[T](obs:Observable[String], pred:T => Boolean)(implicit decoder:DecodeJson[T]):Boolean = {
+    obs.toBlocking.toList.exists { text =>
+      log.debug("°"*160)
+      log.debug(s"receiving text $text\n")
+      JsonParser.parse(text).flatMap(decoder.decodeJson(_).toDisjunction).map(pred).getOrElse(false)
+    }
+  }
+
+}
+
+trait PlayerClient { self:SiteMapClient with TestDecoders with HttpTestHelper =>
+  
+  import Step._
+
+  def playerPost(name: String, psw: String, url: SiteMap => Path): Step.FreeStep[Player] = for {
+    siteMap <- getSiteMap
+    playerResp1 <- post(url(siteMap), s"""{ "name":"${name}", "password":"${psw}" }""")
+    _ <- check(isSuccess(playerResp1.getStatusCode), "response is sucessfull")
+    player <- parse[Player](playerResp1.getResponseBody)(privatePlayerDecode)
+    _ <- check(player.name == name, "player name match")
+  } yield player
+
+  def playerPostFails(name: String, psw: String, url: SiteMap => Path, errorSubject: String): Step.FreeStep[Response] = for {
+    siteMap <- getSiteMap
+    playerResp1 <- post(url(siteMap), s"""{ "name":"${name}", "password":"${psw}" }""")
+    _ <- check(!isSuccess(playerResp1.getStatusCode), s"$errorSubject fails")
+  } yield playerResp1
+
+  def playerCreateCompetion(issuer: Player, players: Seq[Player]) = for {
+    siteMap <- getSiteMap
+    jsonText = s"""{
+      "players":[${players.map(p => s""""${p.self}"""").mkString(",")}],
+      "kind":"single-match",
+      "deadline":"all-players"
+    }"""
+    playerResp1 <- post(issuer.createCompetition, jsonText)
+  } yield ()
+
+  def createNewPlayer(name: String, psw: String): Step.FreeStep[Player] =
+    playerPost(name, psw, _.players)
+
+  def createNewPlayerFails(name: String, psw: String): Step.FreeStep[Response] =
+    playerPostFails(name, psw, _.players, "create new player")
+
+  def playerLogin(name: String, psw: String): Step.FreeStep[Player] =
+    playerPost(name, psw, _.playerLogin)
+
+  def playerLoginFails(name: String, psw: String): Step.FreeStep[Response] =
+    playerPostFails(name, psw, _.playerLogin, "player login")
+  
+}
+
+
+trait ScenariosRunner {
+  
+  def scenarios:Seq[Scenario]
+  
+  def runner:Step.FreeStep[Any] => Seq[TestResult]
+  
+  lazy val testResults = scenarios.map { scenario =>
+    println(s"executing ${scenario.description}")
+    scenario -> runner(scenario.step)
+  }
+  
+}
+
+trait ConsoleScenarioReporter {
+  
+  def testResults:Seq[(Scenario, Seq[TestResult])]
+  
+  testResults.foreach { 
+    case (scenario, steps) =>
+      println("-" * 120)
+      println(scenario.description)
+      println(steps.map {
+        case Assert(false, desc) => ("V" * 120) + "\nError\n" + desc + "\n" + ("^" * 120)
+        case Assert(true, desc) => desc
+        case tr => ("V" * 120) + "\n"+tr+ "\n"+("^" * 120)
+      }.map(" - "+_).mkString("\n"))
+  }
+}
+
+object JettyApplicationTestRunner {
+  
+  object TestWebSocketEndPoint {
+    var onOpenAction: (Session, EndpointConfig) => Unit = _
+  }
+  
+  class TestWebSocketEndPointHelper extends Endpoint {
+  
+    override def onOpen(session: Session, config: EndpointConfig) = {
+      TestWebSocketEndPoint.onOpenAction(session, config)
+    }
+    override def onClose(session: Session, closeReason: CloseReason) = {
+    }
+    override def onError(session: Session, thr: Throwable) = {
+    }
+  
+  }
+}
+
+trait JettyApplicationTestRunner {
+  
+  def testInterpreterConfig:TestInterpreterConfig
+  
+  lazy val runner = new InterpreterJettyRunner(
+    new TestInterpreter(testInterpreterConfig),
+    { () =>
+      
+      val webAppConfig = TestAppJettyConfig.simpleWebAppConfig
+
+      val delegate = new webAppConfig.ConfiguredPlayerWebSocketEndPoint
+
+      JettyApplicationTestRunner.TestWebSocketEndPoint.onOpenAction = (s, c) => delegate.onOpen(s, c)
+      val configurator = new BriscolaContainerConfigurator[JettyApplicationTestRunner.TestWebSocketEndPointHelper](webAppConfig)
+
+      val jettyCfg = {
+        val context = JettyWebAppConfig.defaultWebAppContext()
+        context.setContextPath("/" + webAppConfig.routesConfig.contextPath.path.mkString("/"));
+        JettyWebAppConfig(webAppConfig.routesConfig.host.port, context, configurator)
+      }
+
+      JettyServerFactory.createServers(jettyCfg)
+    })
+}
+
+
+object PlayerTest extends ScenariosRunner with 
+        JettyApplicationTestRunner with 
+        TestDecoders with 
+        SiteMapClient with PlayerClient with 
+        HttpTestHelper with RxTestHelper with 
+        ConsoleScenarioReporter with
+        App {
+
+  lazy val siteMapUrl = "http://localhost:8080/test/site-map"
+  lazy val testInterpreterConfig = TestInterpreterConfig(3)
+  
+  import Step._
+
+  import CompetionEventDecoders._  
+    
+  lazy val scenarios = Seq(
+    Scenario("a player can register", for {
+      _ <- createNewPlayer("pippo", "password")
+    } yield ()),
+
+    Scenario("cant create a player with duplicate name", for {
+      _ <- createNewPlayer("pippo", "password")
+      _ <- createNewPlayerFails("pippo", "password")
+    } yield ()),
+
+    Scenario("a player can register and logon", for {
+      player <- createNewPlayer("pippo", "password")
+      logPlayer <- playerLogin(player.name, "password*")
+    } yield ()),
+
+    Scenario("a player with invalid credentials cant logon", for {
+      player <- createNewPlayer("pippo", "password")
+      logPlayer <- playerLoginFails(player.name, "wrong password")
+    } yield ()),
+
+    Scenario("a player that does not exists cant logon", for {
+      logPlayer <- playerLoginFails("pippo", "password")
+    } yield ()),
+
+    Scenario("a logged player can start a competion", for {
+      player1 <- createNewPlayer("pippo", "password")
+      player2 <- createNewPlayer("pluto", "pass")
+      webSocketPlayer2 <- webSocket(player2.webSocket)
+      comp <- playerCreateCompetion(issuer = player1, Seq(player2))
+      _ <- check(
+          contains[EventAndState[CreatedCompetition, CompetitionState]](
+              webSocketPlayer2, c => c.event.issuer == player1.self), 
+              "contains competion started event")
+    } yield ()))
+
+  
+  /*
+  val cfg = TestInterpreterConfig(3)
+  val runner = new InterpreterJettyRunner(
+    new TestInterpreter(cfg),
+    { () =>
+      
+      val webAppConfig = TestAppJettyConfig.simpleWebAppConfig
+
+      val delegate = new webAppConfig.ConfiguredPlayerWebSocketEndPoint
+
+      TestWebSocketEndPoint.onOpenAction = (s, c) => delegate.onOpen(s, c)
+      val configurator = new BriscolaContainerConfigurator[TestWebSocketEndPointHelper](webAppConfig)
+
+      val jettyCfg = {
+        val context = JettyWebAppConfig.defaultWebAppContext()
+        context.setContextPath("/" + webAppConfig.routesConfig.contextPath.path.mkString("/"));
+        JettyWebAppConfig(webAppConfig.routesConfig.host.port, context, configurator)
+      }
+
+      JettyServerFactory.createServers(jettyCfg)
+    })
+
+  val results = testScenarios.map { scenario =>
+    println(s"executing ${scenario.description}")
+    scenario -> runner(scenario.step)
+  }
+  
+  results.foreach { 
+    case (scenario, steps) =>
+      println("-" * 120)
+      println(scenario.description)
+      println(steps.map {
+        case Assert(false, desc) => ("V" * 120) + "\nError\n" + desc + "\n" + ("^" * 120)
+        case Assert(true, desc) => desc
+        case tr => ("V" * 120) + "\n"+tr+ "\n"+("^" * 120)
+      }.map(" - "+_).mkString("\n"))
+  }
+  
+  */
+  System.exit(0)
+}
+
+
+
+

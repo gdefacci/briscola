@@ -99,4 +99,24 @@ trait TestDecoders {
   def decode[T](str:String)(implicit dj:DecodeJson[T]) = {
     JsonParser.parse(str).flatMap( dj.decodeJson(_).toDisjunction )
   }
+  
+  object CompetionEventDecoders {
+    
+    implicit lazy val CreatedCompetitionDecode = DecodeJson.derive[CreatedCompetition]
+    implicit lazy val CompetitionAcceptedDecode = DecodeJson.derive[CompetitionAccepted]
+    implicit lazy val CompetitionDeclined = DecodeJson.derive[CompetitionDeclined]
+    
+  }
+  
+  implicit def stateAndEventDecoder[E,S](implicit decodeEvent:DecodeJson[E], decodeState:DecodeJson[S]):DecodeJson[EventAndState[E,S]] = {
+    DecodeJson[EventAndState[E,S]] { j =>
+      j.as[Map[String, Json]].flatMap { mp =>
+        for {
+          ev <- decodeEvent.decodeJson(mp("event"))
+          state <- decodeState.decodeJson(mp("state"))
+        } yield EventAndState[E,S](ev, state)
+      }
+    }
+  }
+  
 }

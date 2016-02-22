@@ -1,14 +1,14 @@
 package org.obl.briscola.web.util
 
-import org.eclipse.jetty.webapp.WebAppContext
-import javax.websocket.server.ServerContainer
-import javax.servlet.ServletContext
-import org.obl.briscola.web.util.ServletContextPlanAdder._
-import org.obl.briscola.web.util.WSEndPointAdder._
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
-import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
 import org.eclipse.jetty.util.component.LifeCycle
+import org.eclipse.jetty.webapp.WebAppContext
+import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
+import org.obl.briscola.web.util.ServletContextPlanAdder.toJettyPlanAdder
+
+import javax.servlet.ServletContext
+import javax.websocket.server.ServerContainer
 
 case class JettyWebAppConfig(port: Int, context: WebAppContext, configurator: Containerconfigurator)
 
@@ -44,7 +44,7 @@ object JettyWebAppConfig {
 
 object JettyServerFactory {
 
-  def createServer(jettyConfig: => JettyWebAppConfig): Server = {
+  def createServers(jettyConfig: => JettyWebAppConfig): (Server, org.eclipse.jetty.websocket.jsr356.server.ServerContainer) = {
     val server = new Server();
 
     val connector = new ServerConnector(server);
@@ -69,7 +69,7 @@ object JettyServerFactory {
       def lifeCycleStopping(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {}
     })
 
-    server
+    server -> wscontainer
   }
 
 }

@@ -17,10 +17,14 @@ object TestAppJettyConfig {
     val contextPath = PathSg(testContextPath)
   }
   
-  def testPlans(plans:BriscolaWebAppConfig => Seq[ServletPlan]): Seq[ServletPlan] = {
-    val webAppConfig:BriscolaWebAppConfig = new BriscolaWebAppConfig(testServletConfig, org.obl.briscola.service.Config.createSimpleApp)
-    plans(webAppConfig)
+  def jettyConfig(plans:BriscolaWebAppConfig => Seq[ServletPlan]) = {
+    jettyConfigAndApplication(plans)._2
   }
-
-  def jettyConfig(plans:BriscolaWebAppConfig => Seq[ServletPlan]) = JettyWebAppConfig(port, testContextPath, testPlans(plans))
+  
+  def simpleWebAppConfig = new BriscolaWebAppConfig(testServletConfig, org.obl.briscola.service.Config.createSimpleApp)
+  
+  def jettyConfigAndApplication(plans:BriscolaWebAppConfig => Seq[ServletPlan]):(BriscolaWebAppConfig, JettyWebAppConfig) = {
+    val webAppConfig:BriscolaWebAppConfig = simpleWebAppConfig
+    webAppConfig -> JettyWebAppConfig(port, testContextPath, plans(webAppConfig))
+  }
 }

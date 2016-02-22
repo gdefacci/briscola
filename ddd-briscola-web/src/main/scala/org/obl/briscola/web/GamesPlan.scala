@@ -125,13 +125,13 @@ class GamesPlan(_routes: => GameRoutes, service: => BriscolaService, toPresentat
 
     case GET -> routes.Games(_) =>
       val content = presentation.Collection( service.allGames.map(toPresentation(_)) )
-      Ok(responseBody(content))
+      Ok(asJson(content))
 
     case GET -> routes.GameById(id) =>
       val content = service.gameById(id).map(toPresentation(_))
       content match {
         case None => NotFound()
-        case Some(content) => Ok(responseBody(content))
+        case Some(content) => Ok(asJson(content))
       }
 
     case req @ POST -> routes.Player(id, pid) =>
@@ -142,7 +142,7 @@ class GamesPlan(_routes: => GameRoutes, service: => BriscolaService, toPresentat
             service.playCard(id, pid, card) match {
               case None => NotFound()
               case Some(-\/(err)) => InternalServerError(err.toString)
-              case Some(\/-(content)) => Ok(responseBody(toPresentation(content, Some(pid))))
+              case Some(\/-(content)) => Ok(asJson(toPresentation(content, Some(pid))))
             }
         }
       }
@@ -150,8 +150,8 @@ class GamesPlan(_routes: => GameRoutes, service: => BriscolaService, toPresentat
     case GET -> routes.Player(gid, pid) =>
       service.gameById(gid).flatMap { gm =>
         gm match {
-          case gm: ActiveGameState => gm.players.find(p => p.id == pid).map(toPresentation(_)).map(content => Ok(responseBody(content)))
-          case gm: FinalGameState => gm.players.find(p => p.id == pid).map(toPresentation(_)).map(content => Ok(responseBody(content)))
+          case gm: ActiveGameState => gm.players.find(p => p.id == pid).map(toPresentation(_)).map(content => Ok(asJson(content)))
+          case gm: FinalGameState => gm.players.find(p => p.id == pid).map(toPresentation(_)).map(content => Ok(asJson(content)))
           case _ => None
         }
       } getOrElse NotFound()

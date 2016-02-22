@@ -2,13 +2,16 @@ package org.obl.briscola
 package web
 
 import org.obl.briscola.player.PlayerId
+import org.obl.briscola.presentation.BriscolaEvent
 import org.obl.briscola.presentation.EventAndState
-import org.obl.briscola.web.StateChangeFilter.StateChangeFilter
-import org.obl.briscola.web.util.ArgonautEncodeHelper.responseBody
+import org.obl.briscola.presentation.GameState
+import org.obl.briscola.service.BriscolaService
+import org.obl.briscola.web.util.ArgonautEncodeHelper.asJson
 import org.obl.briscola.web.util.UrlParseUtil
-import org.obl.ddd.StateChange
+import org.slf4j.LoggerFactory
 
-import StateChangeFilter.StateChangeFilter
+import com.typesafe.scalalogging.Logger
+
 import argonaut.EncodeJson
 import javax.websocket.CloseReason
 import javax.websocket.Endpoint
@@ -18,14 +21,16 @@ import rx.lang.scala.Observable
 
 class SessionWrapper(session:Session) {
   
+  lazy val log = Logger(LoggerFactory.getLogger(getClass))
+  
   private def sendText(session: Session, msg: String) = {
-    println("sending to websocket " + msg);
+    log.debug("sending to websocket " + msg);
     session.getBasicRemote.sendText(msg)
   }
   
-  def receiveFrom[T](obs:Observable[T])(implicit enc:EncodeJson[T]) = {
+  def receiveTextFrom[T](obs:Observable[String]) = {
     obs.subscribe { es =>
-      if (session.isOpen()) sendText(session, responseBody(es))
+      if (session.isOpen()) sendText(session, es)
     }
   }
   
@@ -50,27 +55,33 @@ object PlayerSocketConfig {
   
 }
 
-/**
- * FIXME:gameStateChangeFilter e' inutile, passare direttamente changes.collect(gameStateChangeFilter)
- */
-class BasePlayerSocketConfig[S,E,PS,PE](
-    changes: => Observable[StateChange[S, E]],
-    gameStateChangeFilter: StateChangeFilter[S, E, PS, PE])(implicit ej: EncodeJson[EventAndState[PE, PS]]) extends PlayerSocketConfig {
+object BasePlayerSocketConfig {
+  
+  def games(gameService:BriscolaService, gamePresentationAdapter: => GamePresentationAdapter)(implicit enc:EncodeJson[EventAndState[BriscolaEvent, GameState]]):PlayerId => Observable[String] = {
+    val gamesStateChangeFilter = new GamesStateChangeFilter(gameService, gamePresentationAdapter)
+    pid => gameService.changes.collect(gamesStateChangeFilter.apply(pid)).map( asJson(_)(enc) ) 
+  }
+  
+}
+
+class BasePlayerSocketConfig(changes: PlayerId => Observable[String]) extends PlayerSocketConfig {
   
   def config(session: Session, pid: PlayerId): Unit = {
-    new SessionWrapper(session).receiveFrom(changes.collect(gameStateChangeFilter(pid)))
+    new SessionWrapper(session).receiveTextFrom(changes(pid))
   }
 }
 
 
 class PlayerWebSocketEndPoint(playerWebSocketRoutes: => PlayerWebSocketRoutes, wsConfig:PlayerSocketConfig) extends Endpoint {
-    
+ 
+  lazy val log = Logger(LoggerFactory.getLogger(getClass))
+  
   import jsonEncoders._
 
   override def onOpen(session: Session, config: EndpointConfig) = {
-    println("-" * 80)
-    println("Openign websocket "+session.getRequestURI.toString())
-    println("-" * 80)
+    log.debug("-" * 80)
+    log.debug("Openign websocket "+session.getRequestURI.toString())
+    log.debug("-" * 80)
     val sw = new SessionWrapper(session)
     UrlParseUtil.parseUrl(session.getRequestURI.toString()).map { url =>
       url match {
@@ -78,9 +89,9 @@ class PlayerWebSocketEndPoint(playerWebSocketRoutes: => PlayerWebSocketRoutes, w
           wsConfig.config(session, pid)
           
         case x => {
-          println("*" * 80)
-          println(playerWebSocketRoutes.PlayerById.toUriTemplate("var").render)
-          println(s"unmatched websocket uri, uri:$x")
+          log.debug("*" * 80)
+          log.debug(playerWebSocketRoutes.PlayerById.toUriTemplate("var").render)
+          log.debug(s"unmatched websocket uri, uri:$x")
         }
       }
     }

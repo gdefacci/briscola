@@ -164,30 +164,29 @@ class CompetitionsPlan(_routes: => CompetitionRoutes, service: => CompetitionsSe
   lazy val plan = HttpService {
     case GET -> routes.Competitions(_) =>
       val content = presentation.Collection(service.allCompetitions.collect(onlyClientCompetitionState).map(toPresentation(_, None)))
-      Ok(responseBody(content))
+      Ok(asJson(content))
 
     case GET -> routes.CompetitionById(id) =>
       val content = service.competitionById(id).collect(onlyClientCompetitionState).map(toPresentation(_, None))
       content match {
         case None => NotFound()
-        case Some(content) => Ok(responseBody(content))
+        case Some(content) => Ok(asJson(content))
       }
     case GET -> routes.PlayerCompetitionById(id, pid) =>
       val content = service.competitionById(id).collect(onlyClientCompetitionState).map(toPresentation(_, Some(pid)))
       content match {
         case None => NotFound()
-        case Some(content) => Ok(responseBody(content))
+        case Some(content) => Ok(asJson(content))
       }
 
     case POST -> routes.AcceptCompetition(id, pid) =>
       service.acceptCompetition(pid, id).map {
         case -\/(err) => InternalServerError(err.toString)
         case \/-(st) =>
-          println(st)
           st match {
             case v: ClientCompetitionState =>
               val content = toPresentation(v, Some(pid))
-              Ok(responseBody(content))
+              Ok(asJson(content))
 
             case _ => NotFound()
           }
@@ -198,7 +197,7 @@ class CompetitionsPlan(_routes: => CompetitionRoutes, service: => CompetitionsSe
         case -\/(err) => InternalServerError(err.toString)
         case \/-(v: ClientCompetitionState) =>
           val content = toPresentation(v, Some(pid))
-          Ok(responseBody(content))
+          Ok(asJson(content))
         case _ => NotFound()
       } getOrElse (NotFound())
 
@@ -210,7 +209,7 @@ class CompetitionsPlan(_routes: => CompetitionRoutes, service: => CompetitionsSe
             toModel(comp.players).map { gamePlayers =>
               service.createCompetition(pid, gamePlayers, comp.kind, comp.deadline) match {
                 case -\/(err) => InternalServerError(err.toString)
-                case \/-(content: ClientCompetitionState) => Ok(responseBody(toPresentation(content, Some(pid))))
+                case \/-(content: ClientCompetitionState) => Ok(asJson(toPresentation(content, Some(pid))))
                 case _ => NotFound()
               }
             }.toOption.getOrElse(BadRequest())
