@@ -1,6 +1,6 @@
 organization  in ThisBuild  := "org.obl"
 version       in ThisBuild  := "0.1.0-SNAPSHOT"
-scalaVersion  in ThisBuild  := "2.11.7"
+scalaVersion  in ThisBuild  := "2.11.8"
 
 lazy val sharedSettings = Defaults.defaultSettings ++ Seq(
 		version := "0.1.0",

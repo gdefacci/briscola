@@ -13,9 +13,9 @@ class ServletContextPlanAdder(context:ServletContext) {
   lazy val logger = Logger(LoggerFactory.getLogger(getClass))
   
   def addPlan(plan:ServletPlan) = {
-    val pth = plan.servletPath.path.mkString("/")
+    val pth = plan.servletPath.render
     logger.debug("*"*80)
-    val servletPath = s"/$pth/*"
+    val servletPath = s"$pth/*"
     logger.debug(s"adding plan ${plan.getClass.getName} at path '$servletPath'")
     val cfg = context.addServlet(plan.getClass.getName, new Http4sServlet(plan.plan))
     cfg.addMapping(servletPath)

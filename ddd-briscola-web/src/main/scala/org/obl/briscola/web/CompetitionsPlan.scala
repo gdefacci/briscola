@@ -10,21 +10,11 @@ import org.http4s.server._
 import org.obl.briscola.competition._
 import org.obl.briscola.service._
 import scalaz.{ -\/, \/, \/- }
-import org.obl.briscola.web.util.ServletRoutes
 import jsonEncoders._
 import jsonDecoders._
-import org.obl.briscola.web.util.{ Plan, BiPath }
 import org.obl.briscola.player.GamePlayers
 import org.obl.briscola.web.util.ServletPlan
-
-trait CompetitionRoutes extends ServletRoutes {
-  def Competitions: BiPath
-  def CompetitionById: PathCodec.Symmetric[CompetitionId]
-  def PlayerCompetitionById: PathCodec.Symmetric[(CompetitionId, PlayerId)]
-  def AcceptCompetition: PathCodec.Symmetric[(CompetitionId, PlayerId)]
-  def DeclineCompetition: PathCodec.Symmetric[(CompetitionId, PlayerId)]
-  def CreateCompetition: PathCodec.Symmetric[PlayerId]
-}
+import org.obl.briscola.web.util.ServletPlan
 
 object CompetitionPresentationAdapter {
   def apply(pr: => PlayerRoutes, cr: => CompetitionRoutes) = {
@@ -55,20 +45,20 @@ trait CompetitionPresentationAdapter {
   }
   def apply(comp: Competition, pid: Option[PlayerId]): presentation.Competition = {
     presentation.Competition(
-      GamePlayers.getPlayers(comp.players).map(p => playerRoutes.PlayerById(p)),
+      GamePlayers.getPlayers(comp.players).map(p => playerRoutes.PlayerById.encode(p)),
       apply(comp.kind),
       apply(comp.deadline))
   }
 
   def apply(cid: CompetitionId, comp: ClientCompetitionEvent, pid: PlayerId): presentation.CompetitionEvent = comp match {
     case CreatedCompetition(id, issuer, comp) =>
-      presentation.CreatedCompetition(playerRoutes.PlayerById(issuer.id), competitionRoutes.PlayerCompetitionById(id, pid))
+      presentation.CreatedCompetition(playerRoutes.PlayerById.encode(issuer.id), competitionRoutes.PlayerCompetitionById.encode(id, pid))
 
     case CompetitionAccepted(pid) =>
-      presentation.CompetitionAccepted(playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid))
+      presentation.CompetitionAccepted(playerRoutes.PlayerById.encode(pid), competitionRoutes.PlayerCompetitionById.encode(cid, pid))
 
     case CompetitionDeclined(pid, rsn) =>
-      presentation.CompetitionDeclined(playerRoutes.PlayerById(pid), competitionRoutes.PlayerCompetitionById(cid, pid), rsn)
+      presentation.CompetitionDeclined(playerRoutes.PlayerById.encode(pid), competitionRoutes.PlayerCompetitionById.encode(cid, pid), rsn)
 
   }
 
@@ -80,13 +70,13 @@ trait CompetitionPresentationAdapter {
     }
 
     presentation.CompetitionState(
-      competitionRoutes.CompetitionById(comp.id),
+      competitionRoutes.CompetitionById.encode(comp.id),
       competition.map(apply(_, pid)),
       compKind,
-      acceptingPlayers.map(id => playerRoutes.PlayerById(id)).toSet,
-      decliningPlayers.map(id => playerRoutes.PlayerById(id)).toSet,
-      for (plid <- pid) yield (competitionRoutes.AcceptCompetition(comp.id, plid)),
-      for (plid <- pid) yield (competitionRoutes.DeclineCompetition(comp.id, plid)))
+      acceptingPlayers.map(id => playerRoutes.PlayerById.encode(id)).toSet,
+      decliningPlayers.map(id => playerRoutes.PlayerById.encode(id)).toSet,
+      for (plid <- pid) yield (competitionRoutes.AcceptCompetition.encode(comp.id, plid)),
+      for (plid <- pid) yield (competitionRoutes.DeclineCompetition.encode(comp.id, plid)))
   }
 
 }
@@ -106,7 +96,7 @@ trait GamePlayersInputAdapter {
 
   def apply(teamPlayer: presentation.Input.TeamPlayer): Throwable \/ org.obl.briscola.player.TeamPlayer = {
     import playerRoutes._
-    val pidDecoder = playerRoutes.PlayerById.absolute
+    val pidDecoder = playerRoutes.PlayerById.fullPath
     pidDecoder.decodeFull(teamPlayer.player).map { pid =>
       org.obl.briscola.player.TeamPlayer(pid, teamPlayer.teamName)
     }
@@ -124,7 +114,7 @@ trait GamePlayersInputAdapter {
         val z: Throwable \/ Set[PlayerId] = \/-(Set.empty[PlayerId])
         players.foldLeft(z) { (acc, path) =>
           acc.flatMap { pids =>
-            val pidDecoder = playerRoutes.PlayerById.absolute
+            val pidDecoder = playerRoutes.PlayerById.fullPath
             pidDecoder.decodeFull(path).map(pid => pids + pid)
           }
         }.map(org.obl.briscola.player.Players(_))
@@ -149,9 +139,7 @@ trait GamePlayersInputAdapter {
 
 }
 
-class CompetitionsPlan(_routes: => CompetitionRoutes, service: => CompetitionsService, toPresentation: => CompetitionPresentationAdapter, toModel: => GamePlayersInputAdapter) extends ServletPlan {
-
-  lazy val routes = _routes
+class CompetitionsPlan(val servletPath: org.obl.raz.Path, routes: => CompetitionRoutes, service: => CompetitionsService, toPresentation: => CompetitionPresentationAdapter, toModel: => GamePlayersInputAdapter) extends ServletPlan {
 
   import org.obl.raz.http4s.RazHttp4s._
   import org.obl.briscola.web.util.ArgonautEncodeHelper._

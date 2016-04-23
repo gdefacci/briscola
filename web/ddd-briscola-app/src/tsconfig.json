@@ -13,17 +13,24 @@
                 "libs/reflect-metadata/reflect-metadata.d.ts",
                 "libs/whatwg-fetch/whatwg-fetch.d.ts",
                 "libs/rx/rx.lite.d.ts",
-                
+
                 "../node_modules/flib/index.d.ts",
                 "../node_modules/rest-fetch/index.d.ts",
                 "../node_modules/ddd-briscola-model/index.d.ts",
-                
+
+                "lib/CommandsDispatcher.ts",
+
                 "lib/Util.ts",
+                "lib/CommandID.ts",
                 "lib/commands.ts",
+
                 "lib/PlayersService.ts",
                 "lib/PlayerService.ts",
+
+                "lib/Reducers.ts",
+
                 "lib/App.ts",
                 "index.ts"
-                
+
 	]
 }

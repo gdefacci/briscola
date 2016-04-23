@@ -50,6 +50,7 @@ object JettyServerFactory {
     val connector = new ServerConnector(server);
     connector.setPort(jettyConfig.port);
     server.addConnector(connector);
+    server.setStopAtShutdown(true)
 
     val context = jettyConfig.context
 
@@ -65,7 +66,8 @@ object JettyServerFactory {
         jettyConfig.configurator.configureWeb(context.getServletContext)
         jettyConfig.configurator.configureWerbSockets(wscontainer)
       }
-      def lifeCycleStopped(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {}
+      def lifeCycleStopped(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {
+      }
       def lifeCycleStopping(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {}
     })
 

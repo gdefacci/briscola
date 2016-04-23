@@ -9,15 +9,14 @@ import org.obl.briscola.service.BriscolaService
 import org.obl.briscola.web.util.ArgonautEncodeHelper.asJson
 import org.obl.briscola.web.util.UrlParseUtil
 import org.slf4j.LoggerFactory
-
 import com.typesafe.scalalogging.Logger
-
 import argonaut.EncodeJson
 import javax.websocket.CloseReason
 import javax.websocket.Endpoint
 import javax.websocket.EndpointConfig
 import javax.websocket.Session
 import rx.lang.scala.Observable
+import org.obl.raz.Path
 
 class SessionWrapper(session:Session) {
   
@@ -83,14 +82,14 @@ class PlayerWebSocketEndPoint(playerWebSocketRoutes: => PlayerWebSocketRoutes, w
     log.debug("Openign websocket "+session.getRequestURI.toString())
     log.debug("-" * 80)
     val sw = new SessionWrapper(session)
-    UrlParseUtil.parseUrl(session.getRequestURI.toString()).map { url =>
+    Path.fromJavaUri(new java.net.URI(session.getRequestURI.toString())).map { url =>
       url match {
         case playerWebSocketRoutes.PlayerById(pid) =>
           wsConfig.config(session, pid)
           
         case x => {
           log.debug("*" * 80)
-          log.debug(playerWebSocketRoutes.PlayerById.toUriTemplate("var").render)
+          log.debug(playerWebSocketRoutes.playerByIdUriTemplate.render)
           log.debug(s"unmatched websocket uri, uri:$x")
         }
       }

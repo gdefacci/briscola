@@ -41,11 +41,11 @@ export class EventsLog extends React.Component<EventLogProps, void> {
               <p>players are {ev.competition.competition.players.map(pl => <b>{pl.name} </b>) } of kind <b>{Model.MatchKindKind[ev.competition.competition.kind.kind]}</b> </p>
               <p>
               {ev.competition.accept.map(url =>
-                <button onClick={ clkEv => props.onAcceptCompetition(ev.competition) } >Accept competiton</button>)
-              }
+                <button onClick={ clkEv => props.onAcceptCompetition(ev.competition) } key="1" >Accept competiton</button>
+              ).getOrElse( () => <noscript /> )}
               {ev.competition.decline.map(url =>
-                <button onClick={ clkEv => props.onDeclineCompetition(ev.competition) }>Decline competiton</button>)
-              }
+                <button onClick={ clkEv => props.onDeclineCompetition(ev.competition) } key="1" >Decline competiton</button>
+              ).getOrElse( () => <noscript /> )}
               </p>
             </div>
           )

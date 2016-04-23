@@ -16,16 +16,8 @@ import org.obl.briscola.web.util.ArgonautHelper
 trait TestDecoders {
   
   case class OutPlayer(self:Path, name:String)
-  
-  implicit val pathDecoder = DecodeJson[org.obl.raz.Path] { j =>
-    j.as[String].flatMap { str =>
-      UrlParseUtil.parseUrl(str) match {
-        case None => DecodeResult.fail(s"invalid path ${str}",j.history)
-        case Some(pth) => DecodeResult.ok(pth)
-      }  
-    }
-    
-  }
+
+  implicit lazy val pathDecoder = ArgonautHelper.pathDecoder
   
   implicit lazy val siteMapDecode = DecodeJson.derive[SiteMap]
 

@@ -16,19 +16,19 @@
     "src/**/*.ts"
   ],
   "devDependencies": {
-    "rimraf": "2.4.3",
+    "rimraf": "2.5.2",
     "source-map-loader": "^0.1.5",
-    "ts-loader": "^0.5.6",
-    "typescript": "1.6.2"
+    "ts-loader": "^0.8.1",
+    "typescript": "1.8.2"
   },
   "dependencies": {
-    "flib": "0.1.1",
-    "rest-fetch": "0.2.1",
     "ddd-briscola-model": "file:../ddd-briscola-model",
-    "rx": "3.1.2"
+    "flib": "file:../../../typescript-projects/flib",
+    "rest-fetch": "file:../../../typescript-projects/rest-fetch",
+    "rx": "4.0.8"
   },
   "scripts": {
-    "clean": "rimraf index.js* index.d.ts test lib",
+    "clean": "rimraf index.js index.js.map index.d.ts lib/*",
     "prepublish": "tsc -p src --outDir ."
   }
 }

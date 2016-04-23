@@ -1,6 +1,6 @@
-import {CurrentPlayer, GameState, ActiveGameState, FinalGameState, gameStateChoice, GameStarted, byKindChoice, 
+import {CurrentPlayer, GameState, ActiveGameState, FinalGameState, gameStateChoice, GameStarted, byKindChoice,
   EventAndState, GameEventAndState, eventAndStateChoice, briscolaEventChoice} from "../index"
-  
+
 import {JsMap} from "flib"
 import {fetch, ByUrlCache, fetchChoose} from "rest-fetch"
 import * as TestData from "./testData"
@@ -61,11 +61,11 @@ function test3a() {
   const opts = testFetchOpts(TestData.testData2)
   const p1 = fetchChoose(briscolaEventChoice, opts).fromObject(TestData.eventAndState1.event).then(ev => {
     assert(ev.eventName === "gameStarted")
-    if (ev instanceof GameStarted) {
-      checkGameState1(ev.game)
-    } else return Promise.reject("not a GameStarted")
+    if (ev instanceof GameStarted) return checkGameState1(ev.game)
+    else return Promise.reject("not a GameStarted")
   }, err => {
     console.log(`error ${err}`)
+    return Promise.reject(err)
   })
 
   const p1a = fetchChoose(gameStateChoice, opts).fromObject(TestData.eventAndState1.state).then(st => {
@@ -105,10 +105,9 @@ function test3() {
   return fetch(GameEventAndState, opts).fromObject(TestData.eventAndState1).then(es => {
     const ev = es.event
     assert(ev.eventName === "gameStarted")
-    if (ev instanceof GameStarted) {
-      checkGameState1(ev.game)
-    } else return Promise.reject("not a GameStarted")
-    checkGameState1(es.game)
+    if (ev instanceof GameStarted) checkGameState1(ev.game)
+    else return Promise.reject("not a GameStarted")
+    return checkGameState1(es.game)
   })
 }
 
@@ -118,10 +117,9 @@ function test3b() {
   return fetchChoose(eventAndStateChoice, opts).fromObject(TestData.eventAndState1).then(es => {
     const ev = es.event
     assert(ev.eventName === "gameStarted")
-    if (ev instanceof GameStarted) {
-      checkGameState1(ev.game)
-    } else return Promise.reject("not a GameStarted")
-    checkGameState1(es.game)
+    if (ev instanceof GameStarted) checkGameState1(ev.game)
+    else return Promise.reject("not a GameStarted")
+    return checkGameState1(es.game)
   })
 }
 

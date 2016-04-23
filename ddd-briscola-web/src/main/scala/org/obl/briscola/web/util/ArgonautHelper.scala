@@ -8,14 +8,11 @@ import scalaz.{ -\/, \/, \/- }
 object ArgonautHelper {
 
   lazy val pathDecoder = DecodeJson[org.obl.raz.Path] { j =>
-    j.as[String].toDisjunction.leftMap(_._1).flatMap { s =>
-      UrlParseUtil.parseUrl(s) match {
-        case None => -\/(s"$s is not a valid url")
-        case Some(v) => \/-(v)
-      }
-    } match {
-      case -\/(err) => DecodeResult.fail(err, j.history)
-      case \/-(v) => DecodeResult.ok(v)
+    j.as[String].flatMap { str =>
+      org.obl.raz.Path.fromJavaUri(new java.net.URI(str)) match {
+        case -\/(err) => DecodeResult.fail(s"invalid path ${str}, error : ${err.getMessage}",j.history)
+        case \/-(pth) => DecodeResult.ok(pth)
+      }  
     }
   }
   

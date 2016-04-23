@@ -17,9 +17,11 @@ class InterpreterJettyRunner(interpreter: TestInterpreter, createServer: () => (
     } finally {
       if (server != null && !server.isStopped()) {
         server.stop()
+        server.destroy();
       }
-      if (wsServer != null) {
+      if (wsServer != null && !wsServer.isStopped()) {
         wsServer.stop()
+        wsServer.destroy()
       }
     }
   }

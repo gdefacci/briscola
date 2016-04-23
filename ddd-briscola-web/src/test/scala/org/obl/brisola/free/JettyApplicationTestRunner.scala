@@ -43,8 +43,8 @@ trait JettyApplicationTestRunner {
 
       val jettyCfg = {
         val context = JettyWebAppConfig.defaultWebAppContext()
-        context.setContextPath("/" + webAppConfig.routesConfig.contextPath.path.mkString("/"));
-        JettyWebAppConfig(webAppConfig.routesConfig.host.port, context, configurator)
+        context.setContextPath(TestAppJettyConfig.contextPath.render);
+        JettyWebAppConfig(TestAppJettyConfig.authority.port, context, configurator)
       }
 
       JettyServerFactory.createServers(jettyCfg)

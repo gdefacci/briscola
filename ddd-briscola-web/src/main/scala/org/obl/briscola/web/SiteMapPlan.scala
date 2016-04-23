@@ -7,7 +7,7 @@ import org.obl.raz.http4s.RazHttp4s._
 import org.obl.briscola.web.util.ServletPlan
 import org.obl.briscola.presentation
 
-class SiteMapPlan(_routes: => SiteMapRoutes, siteMap: => presentation.SiteMap) extends ServletPlan {
+class SiteMapPlan(val servletPath: org.obl.raz.Path, _routes: => SiteMapRoutes, siteMap: => presentation.SiteMap) extends ServletPlan {
   
   lazy val routes = _routes
   

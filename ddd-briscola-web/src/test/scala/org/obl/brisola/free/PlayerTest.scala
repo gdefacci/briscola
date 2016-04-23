@@ -7,8 +7,8 @@ import org.obl.briscola.presentation.Player
 import org.obl.briscola.presentation.SiteMap
 import org.obl.brisola.webtest.TestDecoders
 import org.obl.raz.Path
-
 import com.ning.http.client.Response
+import rx.schedulers.Schedulers
 
 trait SiteMapClient { self: TestDecoders =>
   import Step._
@@ -111,10 +111,20 @@ object PlayerTest extends ScenariosRunner with
           contains[EventAndState[CreatedCompetition, CompetitionState]](
               webSocketPlayer2, c => c.event.issuer == player1.self), 
               "contains competion started event")
+//      _ <- check(
+//          contains[EventAndState[CreatedCompetition, CompetitionState]](
+//              webSocketPlayer2, c => c.event.issuer == player1.self), 
+//              "contains competion started event")
     } yield ()))
 
   ConsoleTestReporter(testResults)  
     
+  println("done")
+
+  testInterpreterConfig.webSocketClient.stop()
+  Schedulers.shutdown()
+//  System.exit(0)
+  
 }
 
 

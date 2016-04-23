@@ -13,15 +13,9 @@ import org.http4s.server.websocket.WS
 import org.http4s.websocket.WebsocketBits
 import scalaz.stream.Process
 import scalaz.stream.Exchange
-import org.obl.briscola.web.util.RazWsHelper
 import org.http4s.websocket.WebsocketBits.WebSocketFrame
 import org.obl.raz.PathConverter
-import org.obl.raz.SegmentPosition
-import org.obl.raz.BasePosition
 import org.obl.raz.PathPosition
-import org.obl.briscola.web.util.ServletRoutes
-import org.obl.briscola.web.util.WebSocketRoutes
-import org.obl.briscola.web.util.{ServletPlan, BiPath}
 import org.obl.raz.UriTemplate
 import argonaut.EncodeJson
 import org.obl.briscola.competition.ClientCompetitionState
@@ -29,17 +23,18 @@ import org.obl.briscola.competition.ClientCompetitionEvent
 import org.obl.briscola.service._
 import org.obl.briscola.service.player._
 import org.obl.raz.PathDecoder
+import org.obl.briscola.web.util.ServletPlan
 
-trait PlayerWebSocketRoutes extends WebSocketRoutes {
-  def PlayerById: PathConverter[PlayerId, PlayerId, String, SegmentPosition, SegmentPosition]
-  def playerByIdUriTemplate: UriTemplate
-}
+//trait PlayerWebSocketRoutes extends WebSocketRoutes {
+//  def PlayerById: PathConverter[PlayerId, PlayerId, String, SegmentPosition, SegmentPosition]
+//  def playerByIdUriTemplate: UriTemplate
+//}
 
-trait PlayerRoutes extends ServletRoutes {
-  def Players: BiPath
-  def PlayerLogin: BiPath
-  def PlayerById: PathCodec.Symmetric[PlayerId]
-}
+//trait PlayerRoutes extends ServletRoutes {
+//  def Players: BiPath
+//  def PlayerLogin: BiPath
+//  def PlayerById: PathCodec.Symmetric[PlayerId]
+//}
 
 trait PlayerPresentationAdapter {
   def routes: PlayerRoutes
@@ -49,13 +44,13 @@ trait PlayerPresentationAdapter {
   def apply(pls: Iterable[Player]): Iterable[presentation.Player] =
     pls.map(apply(_))
 
-  def apply(pl: Player) = presentation.Player(routes.PlayerById(pl.id), pl.name,
-    RazWsHelper.asWebSocket(playerWebSocketRoutes.PlayerById(pl.id)),
-    competitionRoutes.CreateCompetition(pl.id))
+  def apply(pl: Player) = presentation.Player(routes.PlayerById.encode(pl.id), pl.name,
+    playerWebSocketRoutes.PlayerById.encode(pl.id),
+    competitionRoutes.CreateCompetition.encode(pl.id))
 
   def apply(pe: player.PlayerEvent): presentation.PlayerEvent = pe match {
-    case player.PlayerLogOn(pid) => presentation.PlayerLogOn(routes.PlayerById(pid))
-    case player.PlayerLogOff(pid) => presentation.PlayerLogOff(routes.PlayerById(pid))
+    case player.PlayerLogOn(pid) => presentation.PlayerLogOn(routes.PlayerById.encode(pid))
+    case player.PlayerLogOff(pid) => presentation.PlayerLogOff(routes.PlayerById.encode(pid))
   }
 }
 
@@ -69,7 +64,7 @@ object PlayerPresentationAdapter {
   }
 }
 
-class PlayersPlan(_routes: => PlayerRoutes, service: => PlayerService,
+class PlayersPlan(val servletPath: org.obl.raz.Path, _routes: => PlayerRoutes, service: => PlayerService,
     toPresentation: => PlayerPresentationAdapter, gameToPresentation: => GamePresentationAdapter, competitionToPresentation: => CompetitionPresentationAdapter) extends ServletPlan {
 
   import org.obl.raz.http4s.RazHttp4s._

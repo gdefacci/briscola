@@ -6,7 +6,7 @@ import org.http4s.server.blaze.BlazeBuilder
 
 object LaunchBlazeBriscolaWebApp extends App {
 
-  val routes = AppRoutesImpl(WebAppConfig.development)
+  val routes = new AppRoutes(new Resources(Authority("localhost", 8080), Path / "app", RoutesServletConfig))
   val webApp = new BriscolaWebApp(routes, Config.simple.app)
 
   BlazeBuilder.bindHttp(8080)

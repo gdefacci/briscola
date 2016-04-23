@@ -16,14 +16,14 @@
     "src/**/*.ts" 
   ],
   "devDependencies": {
-    "rimraf": "2.4.3",
+    "rimraf": "2.5.2",
     "source-map-loader": "^0.1.5",
-    "ts-loader": "^0.5.6",
-    "typescript": "1.6.2"
+    "ts-loader": "^0.8.1",
+    "typescript": "1.8.2"
   },
   "dependencies": {
-    "flib": "0.1.1",
-    "rest-fetch": "0.2.1"
+    "flib": "file:../../../typescript-projects/flib",
+    "rest-fetch": "file:../../../typescript-projects/rest-fetch"
   },
   "scripts": {
     "clean":"rimraf index.js* index.d.ts ddd-briscola-model-test.browser.* test lib",

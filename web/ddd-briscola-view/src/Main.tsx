@@ -1,4 +1,4 @@
-import {App} from "ddd-briscola-app"
+import {App, Commands} from "ddd-briscola-app"
 import {createBoardCommandListener} from "./lib/listeners"
 import {Board} from "./lib/Board"
 
@@ -15,9 +15,9 @@ export function main() {
       const boardProps = createBoardCommandListener(board, (cmd) => app.exec(cmd))
       console.log("boardProps ")
       console.log(boardProps)
-      React.render(<Board {...boardProps}></Board>, el)
+      ReactDOM.render(<Board {...boardProps}></Board>, el)
     })
+    app.exec(new Commands.StarApplication())
 }
-
 
 window.addEventListener("load", (event) => main())

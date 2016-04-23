@@ -10,6 +10,5 @@ export interface DomainEvent {
 export type ByKindChoice = JsMap.Entry<JsConstructor<any>>
 
 export function byKindChoice(bks:() => ByKindChoice[], desc:string):ByPropertySelector {
-  const mp = JsMap.create(bks())
   return ByPropertySelector.fromEntries( (wso:{ kind:string }) => wso.kind, bks, desc)
 }

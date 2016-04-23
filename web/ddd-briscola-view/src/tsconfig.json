@@ -15,21 +15,25 @@
                 "libs/whatwg-fetch/whatwg-fetch.d.ts",
                 "libs/rx/rx.lite.d.ts",
                 "libs/react/react-global.d.ts",
-                
+
                 "../node_modules/flib/index.d.ts",
                 "../node_modules/rest-fetch/index.d.ts",
                 "../node_modules/ddd-briscola-model/index.d.ts",
                 "../node_modules/ddd-briscola-app/index.d.ts",
-                
+
                 "lib/cssClasses.ts",
                 "lib/listeners.ts",
-                
+
                 "lib/TabPane.tsx",
                 "lib/cards.tsx",
+                "lib/PlayerLogin.tsx",
+                "lib/Players.tsx",
+                "lib/PlayerDeck.tsx",
                 "lib/EventsLog.tsx",
+                "lib/GameResult.tsx",
                 "lib/Board.tsx",
-                
+
                 "Main.tsx"
-                
+
 	]
 }

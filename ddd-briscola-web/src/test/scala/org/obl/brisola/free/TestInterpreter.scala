@@ -22,11 +22,10 @@ import dispatch.url
 import rx.lang.scala.Observable
 import rx.lang.scala.Subject
 import rx.lang.scala.subjects.PublishSubject
-import scalaz.{ -\/ => -\/ }
-import scalaz.{ \/- => \/- }
+import scalaz.{ -\/ , \/- }
 import rx.lang.scala.subjects.ReplaySubject
 
-case class TestInterpreterConfig(secondsTimeout: Int)
+case class TestInterpreterConfig(secondsTimeout: Int, webSocketClient:WebSocketClient = new WebSocketClient())
 
 sealed trait TestResult
 
@@ -77,11 +76,10 @@ class TestInterpreter(config: TestInterpreterConfig) {
   private def webSocket(url: String): Try[Observable[String]] = {
     Try {
       val uri = java.net.URI.create(url);
-      val client = new WebSocketClient();
-      client.start();
+      if (!config.webSocketClient.isStarted()) config.webSocketClient.start();
       val subj = ReplaySubject[String]
-      lazy val socket: WebSocketAdapter = new ObservableWebSocketAdapter(subj, client, config.secondsTimeout)
-      val sess = client.connect(socket, uri).get(config.secondsTimeout, TimeUnit.SECONDS)
+      lazy val socket: WebSocketAdapter = new ObservableWebSocketAdapter(subj, config.webSocketClient, config.secondsTimeout)
+      val sess = config.webSocketClient.connect(socket, uri).get(config.secondsTimeout, TimeUnit.SECONDS)
       assert( sess.isOpen(), s"web socket session for url $url is not open" )
       subj
     }
@@ -102,8 +100,6 @@ class ObservableWebSocketAdapter(subj: => Subject[String], client:WebSocketClien
   def close() {
     subj.onCompleted()
     if (getSession != null) getSession.close();
-    client.stop()
-    client.destroy()
   }
   
   override def onWebSocketError(cause: Throwable) {

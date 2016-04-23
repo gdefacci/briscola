@@ -6,7 +6,9 @@
                 "declaration": true,
                 "sourceMap": true,
                 "emitDecoratorMetadata": true,
-                "experimentalDecorators":true
+                "experimentalDecorators":true,
+                "noImplicitReturns":true,
+                "noFallthroughCasesInSwitch":true
 	},
 	"files": [
                 "libs/es6-promise/es6-promise.d.ts",
@@ -25,7 +27,7 @@
                 "lib/game.ts",
                 "lib/EventAndState.ts",
                 "lib/input.ts",
-                
+
                 "index.ts",
 
                 "test/testData.ts",

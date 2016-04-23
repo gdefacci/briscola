@@ -7,16 +7,8 @@ import org.http4s.dsl._
 import org.obl.raz.PathCodec
 import org.obl.briscola.player.PlayerId
 import scalaz.{ -\/, \/, \/- }
-import org.obl.briscola.web.util.ServletRoutes
-import org.obl.briscola.web.util.{ServletPlan, BiPath}
 import org.obl.briscola.service._
-
-trait GameRoutes extends ServletRoutes {
-  def Games: BiPath
-  def GameById: PathCodec.Symmetric[GameId]
-  def Player: PathCodec.Symmetric[(GameId, PlayerId)]
-  def Team: PathCodec.Symmetric[(GameId, String)]
-}
+import org.obl.briscola.web.util.ServletPlan
 
 object GamePresentationAdapter {
   def apply(gr: => GameRoutes, pr: => PlayerRoutes) = {
@@ -36,13 +28,13 @@ trait GamePresentationAdapter {
     presentation.Card(card.number, card.seed, card.points)
   
   def apply(ps: PlayerState): presentation.PlayerState =
-    presentation.PlayerState(playerRoutes.PlayerById(ps.id), ps.cards.map(apply(_)), presentation.Score(ps.score.cards.map( c => apply(c))) )
+    presentation.PlayerState(playerRoutes.PlayerById.encode(ps.id), ps.cards.map(apply(_)), presentation.Score(ps.score.cards.map( c => apply(c))) )
 
   def apply(ps: PlayerFinalState): presentation.PlayerFinalState =
-    presentation.PlayerFinalState(playerRoutes.PlayerById(ps.id), ps.points, presentation.Score(ps.score.cards.map(apply(_))) )
+    presentation.PlayerFinalState(playerRoutes.PlayerById.encode(ps.id), ps.points, presentation.Score(ps.score.cards.map(apply(_))) )
 
   def apply(ps: PlayerLeft): presentation.PlayerLeft =
-    presentation.PlayerLeft(playerRoutes.PlayerById(ps.player), ps.reason)
+    presentation.PlayerLeft(playerRoutes.PlayerById.encode(ps.player), ps.reason)
   
   def apply(ps: DropReason): presentation.DropReason = ps match {
     case pl:PlayerLeft => apply(pl)
@@ -51,30 +43,30 @@ trait GamePresentationAdapter {
     
   def apply(gid:GameId, e: BriscolaEvent, pid:PlayerId): presentation.BriscolaEvent = e match {
     case GameStarted(gm) => presentation.GameStarted(apply(gm, Some(pid)))
-    case GameDropped(dropReason) => presentation.GameDropped(gameRoutes.GameById(gid), apply(dropReason) )
+    case GameDropped(dropReason) => presentation.GameDropped(gameRoutes.GameById.encode(gid), apply(dropReason) )
     case CardPlayed(pid, crd) => presentation.CardPlayed(
-      gameRoutes.GameById(gid),
-      playerRoutes.PlayerById(pid),
+      gameRoutes.GameById.encode(gid),
+      playerRoutes.PlayerById.encode(pid),
       apply(crd))
   }
 
   def apply(gm: ActiveGameState, player: Option[PlayerId]): presentation.ActiveGameState =
     presentation.ActiveGameState(
-      gameRoutes.GameById(gm.id),
+      gameRoutes.GameById.encode(gm.id),
       apply(gm.briscolaCard), 
-      gm.teams.map(tms => tms.teams.map( t => gameRoutes.Team(gm.id, t.name))),
-      gm.moves.map(m => presentation.Move(playerRoutes.PlayerById(m.player.id), apply(m.card))),
-      gm.nextPlayers.map(p => playerRoutes.PlayerById(p.id)),
-      playerRoutes.PlayerById(gm.currentPlayer.id),
+      gm.teams.map(tms => tms.teams.map( t => gameRoutes.Team.encode(gm.id, t.name))),
+      gm.moves.map(m => presentation.Move(playerRoutes.PlayerById.encode(m.player.id), apply(m.card))),
+      gm.nextPlayers.map(p => playerRoutes.PlayerById.encode(p.id)),
+      playerRoutes.PlayerById.encode(gm.currentPlayer.id),
       gm.isLastHandTurn, gm.isLastGameTurn,
-      gm.players.map(p => playerRoutes.PlayerById(p.id)),
-      player.map(pid => gameRoutes.Player(gm.id, pid)),
+      gm.players.map(p => playerRoutes.PlayerById.encode(p.id)),
+      player.map(pid => gameRoutes.Player.encode(gm.id, pid)),
       gm.deckCardsNumber)
 
   def apply(ts:TeamScore):presentation.TeamScore = {
     presentation.TeamScore(
         ts.team.name, 
-        ts.team.players.map(pid => playerRoutes.PlayerById(pid)), 
+        ts.team.players.map(pid => playerRoutes.PlayerById.encode(pid)), 
         ts.score.cards.map(apply(_)), 
         ts.score.points )
   }    
@@ -82,11 +74,11 @@ trait GamePresentationAdapter {
       
   def apply(gm: DroppedGameState): presentation.DroppedGameState =
     presentation.DroppedGameState(
-      gameRoutes.GameById(gm.id),
+      gameRoutes.GameById.encode(gm.id),
       apply(gm.briscolaCard), 
-      gm.teams.map(tms => tms.teams.map( t => gameRoutes.Team(gm.id, t.name))),
-      gm.moves.map(m => presentation.Move(playerRoutes.PlayerById(m.player.id), apply(m.card))),
-      gm.nextPlayers.map(p => playerRoutes.PlayerById(p.id)),
+      gm.teams.map(tms => tms.teams.map( t => gameRoutes.Team.encode(gm.id, t.name))),
+      gm.moves.map(m => presentation.Move(playerRoutes.PlayerById.encode(m.player.id), apply(m.card))),
+      gm.nextPlayers.map(p => playerRoutes.PlayerById.encode(p.id)),
       apply(gm.dropReason))
   
   def apply(gm: FinalGameState): presentation.FinalGameState = {
@@ -97,7 +89,7 @@ trait GamePresentationAdapter {
     val gmr = teamResult.getOrElse(presentation.PlayersGameResult(gm.playersOrderByPoints.map(apply(_)), apply(gm.winner)))
     
     presentation.FinalGameState(
-        gameRoutes.GameById(gm.id),
+        gameRoutes.GameById.encode(gm.id),
         apply(gm.briscolaCard), gmr)
   }
       
@@ -111,7 +103,7 @@ trait GamePresentationAdapter {
   }
 }
 
-class GamesPlan(_routes: => GameRoutes, service: => BriscolaService, toPresentation: => GamePresentationAdapter) extends ServletPlan {
+class GamesPlan(val servletPath: org.obl.raz.Path, _routes: => GameRoutes, service: => BriscolaService, toPresentation: => GamePresentationAdapter) extends ServletPlan {
 
   import org.obl.raz.http4s.RazHttp4s._
   import org.obl.briscola.web.util.ArgonautEncodeHelper._
