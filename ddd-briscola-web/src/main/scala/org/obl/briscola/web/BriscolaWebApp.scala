@@ -11,7 +11,7 @@ import javax.websocket.Endpoint
 import javax.websocket.server.ServerContainer
 import org.obl.raz.{Scheme, Authority, Path}
 
-class BriscolaWebApp(routes:AppRoutes, val app:BriscolaApp) {
+class BriscolaWebApp(val routes:AppRoutes, val app:BriscolaApp) {
   
   lazy val playerPresentationAdapter = PlayerPresentationAdapter (routes.playerRoutes, routes.playerWebSocketRoutes, routes.competitionRoutes)
   

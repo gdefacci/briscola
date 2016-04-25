@@ -2,11 +2,11 @@ package org.obl.brisola.webtest
 
 import org.scalatest.FunSuite
 import scalaz.{ \/- }
-import org.obl.brisola.free.TestAppJettyConfig
 import org.obl.briscola.player.PlayerId
 import org.obl.briscola.GameId
 import org.obl.briscola.competition.CompetitionId
 import org.obl.raz._
+import org.obl.brisola.integration.TestAppJettyConfig
 
 class AppRoutesTest extends FunSuite {
 

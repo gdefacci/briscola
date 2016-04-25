@@ -1,4 +1,4 @@
-package org.obl.brisola.free
+package org.obl.free
 
 sealed trait HTTPMethod
 

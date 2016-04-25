@@ -73,5 +73,32 @@ object JettyServerFactory {
 
     server -> wscontainer
   }
+  
+  def createWebServer(jettyConfig: => JettyWebAppConfig): Server = {
+    val server = new Server();
+
+    val connector = new ServerConnector(server);
+    connector.setPort(jettyConfig.port);
+    server.addConnector(connector);
+    server.setStopAtShutdown(true)
+    
+    val context = jettyConfig.context
+
+    server.setHandler(context);
+
+    context.addLifeCycleListener(new LifeCycle.Listener {
+      def lifeCycleFailure(l: org.eclipse.jetty.util.component.LifeCycle, err: Throwable): Unit = {}
+      def lifeCycleStarted(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {}
+      def lifeCycleStarting(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {
+        jettyConfig.configurator.configureWeb(context.getServletContext)
+      }
+      def lifeCycleStopped(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {
+      }
+      def lifeCycleStopping(l: org.eclipse.jetty.util.component.LifeCycle): Unit = {}
+    })
+
+    server 
+  }
+
 
 }

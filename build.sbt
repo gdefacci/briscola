@@ -36,7 +36,7 @@ lazy val web = Project("ddd-briscola-web",  file("ddd-briscola-web"))
     libraryDependencies ++= http4s,
     //libraryDependencies ++= slf4j,
     libraryDependencies ++= jettyWebSocket,
-    libraryDependencies += databinderDispatch,
-    libraryDependencies += scalaTest
+    libraryDependencies += scalaTest % "test",
+    libraryDependencies += scalajhttp % "test"
   )).dependsOn(briscola)
   

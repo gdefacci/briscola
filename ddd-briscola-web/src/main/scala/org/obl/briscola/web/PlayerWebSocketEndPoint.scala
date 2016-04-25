@@ -7,7 +7,6 @@ import org.obl.briscola.presentation.EventAndState
 import org.obl.briscola.presentation.GameState
 import org.obl.briscola.service.BriscolaService
 import org.obl.briscola.web.util.ArgonautEncodeHelper.asJson
-import org.obl.briscola.web.util.UrlParseUtil
 import org.slf4j.LoggerFactory
 import com.typesafe.scalalogging.Logger
 import argonaut.EncodeJson

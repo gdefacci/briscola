@@ -9,7 +9,11 @@ object ArgonautHelper {
 
   lazy val pathDecoder = DecodeJson[org.obl.raz.Path] { j =>
     j.as[String].flatMap { str =>
-      org.obl.raz.Path.fromJavaUri(new java.net.URI(str)) match {
+      val r = for {
+        juri <- \/.fromTryCatchNonFatal( new java.net.URI(str) )
+        pth <- org.obl.raz.Path.fromJavaUri(juri)
+      } yield pth
+      r match {
         case -\/(err) => DecodeResult.fail(s"invalid path ${str}, error : ${err.getMessage}",j.history)
         case \/-(pth) => DecodeResult.ok(pth)
       }  

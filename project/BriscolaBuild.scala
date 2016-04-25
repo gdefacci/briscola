@@ -30,6 +30,8 @@ object BriscolaBuild extends Build {
     //"org.obl" %% "raz-http4s" % razVersion
   )
   
+  lazy val scalajhttp = "org.scalaj" %% "scalaj-http" % "2.3.0"
+  
   /*
   lazy val slf4j = Seq(
     "org.slf4j" % "slf4j-api" % "1.7.5",
@@ -54,9 +56,7 @@ object BriscolaBuild extends Build {
     "org.cvogt" %% "scalacheck-extensions" % "0.2"
   )
 
-  lazy val databinderDispatch = "net.databinder.dispatch" %% "dispatch-core" % "0.11.3"
-  
-  lazy val scalaTest = "org.scalatest" %% "scalatest" % "2.2.6" % "test"
+  lazy val scalaTest = "org.scalatest" %% "scalatest" % "2.2.6"
 
   lazy val logging = {
     val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0"
