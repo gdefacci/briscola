@@ -64,4 +64,6 @@ object BriscolaBuild extends Build {
     Seq(scalaLogging, slf4jLog4j)
   }
   
+  lazy val javaJsoLd = "com.github.jsonld-java" % "jsonld-java" % "0.8.2"
+  
 }

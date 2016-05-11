@@ -3,32 +3,45 @@ package org.obl.free
 import argonaut.DecodeJson
 import scalaz.Functor
 import scalaz.Free
-import scalaz.Free.{liftF,point}
-import org.obl.briscola.presentation.SiteMap
 import org.obl.raz.Path
-import rx.lang.scala.Observable
-import scala.util.Try
 
-sealed trait Step[Next]
+sealed trait Step[S, Next]
+
+case class HTTPCall[S,N](method:HTTPMethod, url:String, body:Option[String], next:Step.Response => N) extends Step[S,N]
+case class Parse[S,N,T](body:String, decoder:DecodeJson[T], next:T => N) extends Step[S,N]
+case class Check[S,N](value:Boolean, description:String, next:N) extends Step[S,N]
+case class WebSocket[S,N](url:String, next:ObservableHolder[String] => N) extends Step[S,N]
+case class GetState[S,Next](next:S => Next) extends Step[S,Next]
 
 object Step {
   
-  implicit val functor: Functor[Step] = new Functor[Step] {
-    def map[A,B](step: Step[A])(f: A => B): Step[B] = step match {
+  implicit def functor[S]: Functor[({ type Type[T] = Step[S,T]})#Type] = new Functor[({ type Type[T] = Step[S,T]})#Type] {
+    def map[A,B](step: Step[S,A])(f: A => B): Step[S,B] = step match {
       case HTTPCall(mthd, url, body, next) => HTTPCall(mthd, url, body, next andThen f)
       case Parse(body, decoder, next) => Parse(body, decoder, next andThen f)
       case WebSocket(url, next) => WebSocket(url, next andThen f)
       case Check(v, desc, next) => Check(v, desc, f(next))
+      case GetState(next) => GetState(next andThen f)
     }
   }
   
-  type FreeStep[A] = Free[Step, A]
-
   type Response = scalaj.http.HttpResponse[String]
   
-  def liftF[A](value: => Step[A]) = Free.liftF[Step,A](value)
+  type Free[S,A] = scalaz.Free[({type Type[T] = Step[S,T]})#Type, A]
   
-  def pure[A](value: => A): FreeStep[A] = point(value)
+}
+
+class StepFactory[S] {
+
+  import Step.Response
+  
+  type StepType[T] = Step[S,T]
+  
+  type FreeStep[A] = Step.Free[S, A]
+
+  def liftF[A](value: => StepType[A]) = Free.liftF[StepType,A](value)
+  
+  def pure[A](value: => A): FreeStep[A] = Free.point[({type Type[T] = Step[S,T]})#Type, A](value)
   
   def http(method:HTTPMethod, url:String, body:Option[String]):FreeStep[Response] = liftF( HTTPCall(method, url, body, identity) ) 
   def http(method:HTTPMethod, url:Path, body:Option[String]):FreeStep[Response] = http(method, url.render, body)
@@ -44,28 +57,9 @@ object Step {
 
   def webSocket(url:Path):FreeStep[ObservableHolder[String]] = webSocket(url.render)
   private def webSocket(url:String):FreeStep[ObservableHolder[String]] = liftF( WebSocket(url, identity) )
-  def parse[T](body:String)(implicit decoder:DecodeJson[T]):FreeStep[T] = liftF( Parse[T,T](body, decoder, identity) )
+  def parse[T](body:String)(implicit decoder:DecodeJson[T]):FreeStep[T] = liftF( Parse[S,T,T](body, decoder, identity) )
   def check(value:Boolean, desc:String):FreeStep[Unit] = liftF( Check(value, desc, ()) )
   
-}
-
-case class HTTPCall[N](method:HTTPMethod, url:String, body:Option[String], next:Step.Response => N) extends Step[N]
-case class Parse[N,T](body:String, decoder:DecodeJson[T], next:T => N) extends Step[N]
-case class Check[N](value:Boolean, description:String, next:N) extends Step[N]
-case class WebSocket[N](url:String, next:ObservableHolder[String] => N) extends Step[N]
-
-case class ObservableHolder[T](source:Observable[T]) {
-  
-  private val buffer = collection.mutable.Buffer.empty[T]
-  
-  source.foreach { msg =>
-    println("*"*160)
-    println("received message " + msg)
-    println("*"*160)
-    buffer += msg 
-  }
-  
-  def messages:Seq[T] = buffer.toSeq
+  def initialState:FreeStep[S] = liftF(GetState(identity))
   
 }
-

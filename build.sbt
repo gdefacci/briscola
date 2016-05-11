@@ -5,7 +5,8 @@ scalaVersion  in ThisBuild  := "2.11.8"
 lazy val sharedSettings = Defaults.defaultSettings ++ Seq(
 		version := "0.1.0",
 		scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature"),
-    organization := "org.obl"
+    organization := "org.obl",
+    parallelExecution in Test := false
 	)
   
 lazy val ddd = Project("ddd",  file("ddd"))
@@ -34,6 +35,7 @@ lazy val web = Project("ddd-briscola-web",  file("ddd-briscola-web"))
     libraryDependencies ++= logging,
     libraryDependencies ++= rx,
     libraryDependencies ++= http4s,
+    libraryDependencies += javaJsoLd,
     //libraryDependencies ++= slf4j,
     libraryDependencies ++= jettyWebSocket,
     libraryDependencies += scalaTest % "test",

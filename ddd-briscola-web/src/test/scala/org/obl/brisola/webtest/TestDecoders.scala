@@ -11,6 +11,7 @@ import scalaz.{ -\/, \/, \/- }
 import org.obl.raz.Path
 import argonaut.JObject
 import org.obl.briscola.web.util.ArgonautHelper
+import org.obl.briscola.web.jsonDecoders
 
 trait TestDecoders {
 
@@ -78,6 +79,40 @@ trait TestDecoders {
 
     DecodeJson.derive[CompetitionState]
   }
+  
+  implicit lazy val byteDecode = DecodeJson[Byte] (js => js.as[Int].map(_.toByte))
+  
+  implicit lazy val dropReason:DecodeJson[DropReason] = {
+    
+    lazy val playerLeftDropReason = ofKind(DropReasonKind.playerLeft, DecodeJson.derive[PlayerLeft])
+    
+    playerLeftDropReason.map( pl => pl:DropReason )
+  }
+  
+  import jsonDecoders.seedDecoder
+    
+  implicit val cardDecode = DecodeJson.derive[Card] 
+  implicit val moveDecode = DecodeJson.derive[Move] 
+  
+  implicit val gameResultDecode:DecodeJson[GameResult] = {
+    
+    implicit val scoreDecode = DecodeJson.derive[Score]
+    implicit val teamScoreDecode = DecodeJson.derive[TeamScore]
+	  implicit val teamsGameResultDecode = DecodeJson.derive[TeamsGameResult].map(p => p:GameResult)
+	  implicit val playerFinalStateDecode = DecodeJson.derive[PlayerFinalState]
+		
+	  implicit val playersGameResultDecode = DecodeJson.derive[PlayersGameResult].map(p => p:GameResult)
+	  
+	  teamsGameResultDecode ||| playersGameResultDecode 
+  }
+  
+  implicit val finishedGameStateDecode = ofKind(GameStateKind.finished, DecodeJson.derive[FinalGameState]) 
+  implicit val activeGameStateDecode = ofKind(GameStateKind.active, DecodeJson.derive[ActiveGameState]) 
+  implicit val droppedGameStateDecode = ofKind(GameStateKind.dropped, DecodeJson.derive[DroppedGameState])
+  
+  implicit lazy val gameStateDecode:DecodeJson[GameState] = finishedGameStateDecode.map(p => p:GameState) |||
+    activeGameStateDecode.map(p => p:GameState) |||
+    droppedGameStateDecode.map(p => p:GameState) 
 
   def decode[T](str: String)(implicit dj: DecodeJson[T]) = {
     JsonParser.parse(str).flatMap(dj.decodeJson(_).toDisjunction)
@@ -87,14 +122,31 @@ trait TestDecoders {
     case text if JsonParser.parse(text).flatMap( dj.decodeJson(_).toDisjunction ).isRight =>
       JsonParser.parse(text).flatMap( dj.decodeJson(_).toDisjunction ).toOption.get
   }
+  
+  def ofKind[E <: Enumeration, T <: ADT[E]](e:E#Value, dj:DecodeJson[T]):DecodeJson[T] = DecodeJson[T] { js =>
+    val kstr = js.get[String]("kind")
+    val toDecode = kstr.map(_ == e.toString).getOr(false)
+    if (toDecode) dj.decode(js)
+    else DecodeResult.fail(s"not a $e, got $js", js.history)
+    
+  }
 
   object CompetionEventDecoders {
 
-    implicit lazy val CreatedCompetitionDecode = DecodeJson.derive[CreatedCompetition]
-    implicit lazy val CompetitionAcceptedDecode = DecodeJson.derive[CompetitionAccepted]
-    implicit lazy val CompetitionDeclined = DecodeJson.derive[CompetitionDeclined]
+    implicit lazy val CreatedCompetitionDecode = ofKind(CompetitionEventKind.createdCompetition, DecodeJson.derive[CreatedCompetition])
+    implicit lazy val CompetitionAcceptedDecode = ofKind(CompetitionEventKind.playerAccepted, DecodeJson.derive[CompetitionAccepted])
+    implicit lazy val CompetitionDeclinedDecode = ofKind(CompetitionEventKind.playerDeclined, DecodeJson.derive[CompetitionDeclined])
 
   }
+  
+  object GameEventDecoders {
+
+    implicit lazy val GameStartedDecode = ofKind(BriscolaEventKind.gameStarted, DecodeJson.derive[GameStarted])
+    implicit lazy val GameDroppedDecode = ofKind(BriscolaEventKind.gameDropped, DecodeJson.derive[GameDropped])
+    implicit lazy val CardPlayedDecode = ofKind(BriscolaEventKind.cardPlayed, DecodeJson.derive[CardPlayed])
+
+  }
+
 
   implicit def stateAndEventDecoder[E, S](implicit decodeEvent: DecodeJson[E], decodeState: DecodeJson[S]): DecodeJson[EventAndState[E, S]] = {
     DecodeJson[EventAndState[E, S]] { j =>
