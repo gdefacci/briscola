@@ -23,22 +23,15 @@ object BriscolaBuild extends Build {
     "io.reactivex" % "rxjava" % "1.1.1"
   )
   
-  val razVersion = "0.8-SNAPSHOT"
+  val razVersion = "0.8.0-SNAPSHOT"
   
   lazy val raz = Seq(
-    "org.obl" %% "raz-shapeless" % razVersion
-    //"org.obl" %% "raz-http4s" % razVersion
+    "org.obl" %% "raz" % razVersion,
+    "org.obl" %% "raz-http4s" % razVersion
   )
   
   lazy val scalajhttp = "org.scalaj" %% "scalaj-http" % "2.3.0"
   
-  /*
-  lazy val slf4j = Seq(
-    "org.slf4j" % "slf4j-api" % "1.7.5",
-    "org.slf4j" % "slf4j-simple" % "1.7.5"
-  )
-  */
-
   lazy val jettyVersion = "9.3.2.v20150730"  
   
   lazy val servletApi = "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"

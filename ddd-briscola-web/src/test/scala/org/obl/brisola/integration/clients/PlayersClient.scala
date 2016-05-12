@@ -43,13 +43,13 @@ trait PlayersClient[S] { self: SiteMapClient[S] with TestDecoders with StepFacto
     def acceptCompetition(cs: CompetitionState) = for {
       _ <- check(cs.accept.isDefined, s"${player.name} is enabled to accept the competition")
       resp <- post(cs.accept.get)
-      _ <- check(resp.is2xx, s"${player.name} accepted the competion")
+      _ <- check(resp.is2xx, s"${player.name} could accept the competion")
     } yield resp
 
     def declineCompetition(cs: CompetitionState) = for {
       _ <- check(cs.decline.isDefined, s"${player.name} is enabled to decline the competition")
       resp <- post(cs.decline.get)
-      _ <- check(resp.is2xx, s"${player.name} declined the competition")
+      _ <- check(resp.is2xx, s"${player.name} cuuld decline the competition")
     } yield resp
 
     object events {

@@ -25,16 +25,9 @@ import org.obl.briscola.service.player._
 import org.obl.raz.PathDecoder
 import org.obl.briscola.web.util.ServletPlan
 
-//trait PlayerWebSocketRoutes extends WebSocketRoutes {
-//  def PlayerById: PathConverter[PlayerId, PlayerId, String, SegmentPosition, SegmentPosition]
-//  def playerByIdUriTemplate: UriTemplate
-//}
-
-//trait PlayerRoutes extends ServletRoutes {
-//  def Players: BiPath
-//  def PlayerLogin: BiPath
-//  def PlayerById: PathCodec.Symmetric[PlayerId]
-//}
+trait PresentationAdapter[Domain,Presentation] {
+  def apply(d:Domain):Throwable \/ Presentation
+}
 
 trait PlayerPresentationAdapter {
   def routes: PlayerRoutes

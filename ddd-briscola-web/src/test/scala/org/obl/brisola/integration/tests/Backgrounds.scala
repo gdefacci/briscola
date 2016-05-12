@@ -5,12 +5,22 @@ import org.obl.free._
 import org.obl.briscola.presentation.{ CompetitionState, Player }
 import org.obl.briscola.web.BriscolaWebApp
 
-import org.obl.briscola.player.{ Player => DomainPlayer, Players => DomainPlayers }
-
 import org.obl.briscola.competition.{ SingleMatch, CompetitionStartDeadline }
 import scalaz.{ -\/, \/, \/- }
 import org.obl.ddd.DomainError
 import scalaz.WriterT
+
+object Domain {
+  type Player = org.obl.briscola.player.Player 
+  type GamePlayers = org.obl.briscola.player.GamePlayers 
+  val Players = org.obl.briscola.player.Players 
+  type CompetitionState  = org.obl.briscola.competition.CompetitionState  
+}
+
+
+
+case class PlayerInfo(domain: Domain.Player, presentation: Player)
+case class CompetitionStateInfo(domain: Domain.CompetitionState, presentation: CompetitionState)
 
 case class CompetionWith3Players(player1: Player, player2: Player, player3: Player, competition: CompetitionState)
 
@@ -33,29 +43,30 @@ object Backgrounds {
 
   lazy val void: Background[Unit] = WriterT.put(create[Unit] { webApp => \/-(webApp, ()) })("empty initial state" :: Nil)
 
-  def createPlayer(name: String, pws: String): Background[DomainPlayer] = WriterT.put(create[DomainPlayer] { webApp =>
+  def createPlayer(name: String, pws: String): Background[PlayerInfo] = WriterT.put(create[PlayerInfo] { webApp =>
     for {
       pl1 <- webApp.app.playerService.createPlayer(name, pws)
-    } yield (webApp -> pl1)
+    } yield (webApp -> PlayerInfo(pl1, webApp.playerPresentationAdapter(pl1)))
   })(s"$name is sucessfully logged" :: Nil)
+
+  def createCompetition(issuer: Domain.Player, players: Domain.GamePlayers) = WriterT.put(create[CompetitionStateInfo] { webApp =>
+    for {
+      genComp <- webApp.app.competitionService.createCompetition(issuer.id, players, SingleMatch, CompetitionStartDeadline.AllPlayers)
+      comp <- genComp match {
+        case c: org.obl.briscola.competition.ClientCompetitionState => \/-(c)
+        case c => -\/(GenericDomainError(new Exception(s"expecting a ClientCompetitionState got $c")))
+      }
+    } yield {
+      webApp -> CompetitionStateInfo(comp, webApp.competitionPresentationAdapter(comp, None))
+    }
+  })(s"${issuer.name} create a competion with ${players}" :: Nil)
 
   lazy val given3PlayersAndPlayer1CreateACompetion = for {
     pl1 <- createPlayer("player1", "psw1")
     pl2 <- createPlayer("player2", "psw2")
     pl3 <- createPlayer("player3", "psw3")
-    res <- WriterT.put(create[CompetionWith3Players] { webApp =>
-      for {
-        genComp <- webApp.app.competitionService.createCompetition(pl1.id, DomainPlayers(Set(pl2.id, pl3.id)), SingleMatch, CompetitionStartDeadline.AllPlayers)
-        comp <- genComp match {
-          case c: org.obl.briscola.competition.ClientCompetitionState => \/-(c)
-          case c => -\/(GenericDomainError(new Exception(s"expecting a ClientCompetitionState got $c")))
-        }
-        toPresentation = webApp.playerPresentationAdapter(_: DomainPlayer)
-      } yield {
-        webApp -> CompetionWith3Players(toPresentation(pl1), toPresentation(pl2), toPresentation(pl3), webApp.competitionPresentationAdapter(comp, None))
-      }
-    })("player1 create a competion" :: Nil)
-  } yield res
+    comp <- createCompetition(pl1.domain, Domain.Players(Set(pl2.domain.id, pl3.domain.id)))
+  } yield CompetionWith3Players(pl1.presentation, pl2.presentation, pl3.presentation, comp.presentation)
 
 }
 
