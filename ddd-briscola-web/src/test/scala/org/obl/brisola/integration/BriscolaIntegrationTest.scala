@@ -23,6 +23,8 @@ object BriscolaIntegrationTest {
       scalaz.StateT[ErrorDisjunction, BriscolaWebApp, S](f)
       
   type Background[T] = WriterT[TestState, List[String], T]
+  
+  def Background[T](desc:String, ts:TestState[T]):Background[T] = WriterT.put(ts)(desc :: Nil)
 }
 
 trait BriscolaIntegrationTest[S] extends ScenariosRunner[S] {
@@ -33,7 +35,7 @@ trait BriscolaIntegrationTest[S] extends ScenariosRunner[S] {
 
   private def playerChannels(app: BriscolaWebApp): Path => Throwable \/ Observable[String] = { uri =>
     app.routes.playerWebSocketRoutes.PlayerById.fullPath.decodeFull(uri).map { pid =>
-      app.competitionPlayerChannels(pid).merge(app.gamePlayerChannels(pid)).merge(app.playerPlayerChannels(pid))
+      app.channel(pid)
     }
   }
   

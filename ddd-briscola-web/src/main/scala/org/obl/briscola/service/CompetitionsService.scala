@@ -8,14 +8,15 @@ import org.obl.briscola.competition._
 import org.obl.briscola.player._
 import scalaz.{ -\/, \/, \/- }
 import org.obl.briscola.web.util.TStateChange
+import org.obl.briscola.web.util.TraverseUtils
 
 trait CompetitionsService {
 
   def createCompetition(issuer: PlayerId, players: GamePlayers, kind: MatchKind, deadLine: CompetitionStartDeadline): CompetitionError \/ CompetitionState
 
-  def acceptCompetition(pid: PlayerId, cid: CompetitionId): Option[CompetitionError \/ CompetitionState]
+  def acceptCompetition(pid: PlayerId, cid: CompetitionId): CompetitionError \/ Option[CompetitionState]
 
-  def declineCompetition(pid: PlayerId, cid: CompetitionId, reason: Option[String]): Option[CompetitionError \/ CompetitionState]
+  def declineCompetition(pid: PlayerId, cid: CompetitionId, reason: Option[String]): CompetitionError \/ Option[CompetitionState]
 
   def allCompetitions:Iterable[CompetitionState]
   def competitionById(id:CompetitionId):Option[CompetitionState]
@@ -40,15 +41,15 @@ trait BaseCompetitionsService extends BaseAggregateService[CompetitionId, Compet
   def createCompetition(issuer: PlayerId, players: GamePlayers, kind: MatchKind, deadLine: CompetitionStartDeadline): CompetitionError \/ CompetitionState =
     runCommand(EmptyCompetition, CreateCompetition(issuer, players, kind, deadLine))
 
-  def acceptCompetition(pid: PlayerId, cid: CompetitionId): Option[CompetitionError \/ CompetitionState] =
-    repository.get(cid).map { cs =>
+  def acceptCompetition(pid: PlayerId, cid: CompetitionId): CompetitionError \/ Option[CompetitionState] =
+    TraverseUtils.seqOption( repository.get(cid).map { cs =>
       runCommand(cs, AcceptCompetition(pid))
-    }
+    } )
 
-  def declineCompetition(pid: PlayerId, cid: CompetitionId, reason: Option[String]): Option[CompetitionError \/ CompetitionState] =
-    repository.get(cid).map { cs =>
+  def declineCompetition(pid: PlayerId, cid: CompetitionId, reason: Option[String]): CompetitionError \/ Option[CompetitionState] =
+    TraverseUtils.seqOption( repository.get(cid).map { cs =>
       runCommand(cs, DeclineCompetition(pid, reason))
-    }
+    } )
   
   def allCompetitions:Iterable[CompetitionState] = repository.all
   def competitionById(id:CompetitionId):Option[CompetitionState] = repository.get(id)

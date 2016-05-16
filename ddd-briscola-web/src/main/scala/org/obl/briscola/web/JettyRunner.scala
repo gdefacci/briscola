@@ -4,7 +4,7 @@ import org.obl.briscola.web.util.JettyServerFactory
 import org.obl.briscola.web.util.JettyWebAppConfig
 import org.obl.raz.Authority
 import org.obl.raz.Path
-
+import org.obl.briscola.web.util.ContainerConfiguratorImpl
 
 object AppConfigFactory {
 
@@ -16,7 +16,8 @@ object AppConfigFactory {
 
   class ConcretePlayerWebSocketEndPoint extends webAppConfig.ConfiguredPlayerWebSocketEndPoint
 
-  lazy val configurator = new BriscolaContainerConfigurator[ConcretePlayerWebSocketEndPoint](webAppConfig)
+  lazy val configurator = new ContainerConfiguratorImpl[ConcretePlayerWebSocketEndPoint](
+      webAppConfig.routes.playerWebSocketRoutes.playerByIdUriTemplate, webAppConfig.webApp.plans)
 
   lazy val create: JettyWebAppConfig = {
     val context = JettyWebAppConfig.defaultWebAppContext()

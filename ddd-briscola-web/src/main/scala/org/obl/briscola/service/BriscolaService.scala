@@ -15,7 +15,7 @@ import org.obl.briscola.web.util.TStateChange
 
 trait BriscolaService {
   def startGame(players: GamePlayers): BriscolaError \/ GameState
-  def playCard(id: GameId, pid: PlayerId, card: Card): Option[(BriscolaError \/ GameState)]
+  def playCard(id: GameId, pid: PlayerId, card: Card): BriscolaError \/ Option[GameState]
 
   def gameById(id: GameId): Option[GameState]
   def allGames: Iterable[GameState]
@@ -42,9 +42,13 @@ trait BaseBriscolaService extends BaseAggregateService[GameId, GameState, Brisco
   def startGame(players: GamePlayers): BriscolaError \/ GameState =
     runCommand(EmptyGameState, StartGame(players))
 
-  def playCard(id: GameId, pid: PlayerId, card: Card): Option[(BriscolaError \/ GameState)] =
+  def playCard(id: GameId, pid: PlayerId, card: Card): BriscolaError \/ Option[GameState] =
     repository.get(id).map { gs =>
       runCommand(gs, PlayCard(pid, card))
+    } match {
+      case Some(\/-(v)) => \/-(Some(v))
+      case Some(-\/(err)) => -\/(err)
+      case None => \/-(None)
     }
 
   def allGames: Iterable[GameState] = repository.all
@@ -53,11 +57,11 @@ trait BaseBriscolaService extends BaseAggregateService[GameId, GameState, Brisco
 
   lazy val finishedGames:Observable[TStateChange[ActiveGameState, BriscolaEvent, FinalGameState]] =
     changes.collect {
-      case StateChange(sa @ ActiveGameState(id1,_,_,_,_,_),e, sb @ FinalGameState(_,_,_,_)) => TStateChange(sa,e,sb)
+      case StateChange(sa:ActiveGameState, e, sb:FinalGameState) => TStateChange(sa,e,sb)
     }
   
   lazy val droppedGames:Observable[TStateChange[ActiveGameState, BriscolaEvent, DroppedGameState]] =
     changes.collect {
-      case StateChange(sa @ ActiveGameState(id1,_,_,_,_,_),e, sb @ DroppedGameState(_,_,_,_,_,_,_)) => TStateChange(sa,e,sb)
+      case StateChange(sa:ActiveGameState,e, sb:DroppedGameState) => TStateChange(sa,e,sb)
     }
 }

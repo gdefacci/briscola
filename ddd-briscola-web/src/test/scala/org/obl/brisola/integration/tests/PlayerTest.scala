@@ -42,7 +42,7 @@ class PlayerTest extends FunSuite with PlayersIntegrationTest[Unit] with ScalaTe
     Scenario("a player that does not exists cant logon", for {
       logPlayer <- playerLoginFails("pippo", "password")
     } yield ()),
-
+    
     Scenario("a logged player can start a competion", for {
       player1 <- createNewPlayer("pippo", "password")
       player2 <- createNewPlayer("pluto", "pass")

@@ -5,7 +5,7 @@ import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
-import org.obl.briscola.web.util.ServletContextPlanAdder.toJettyPlanAdder
+import org.obl.briscola.web.util.ServletContextPlanAdder.toServletPlanAdder
 
 import javax.servlet.ServletContext
 import javax.websocket.server.ServerContainer
