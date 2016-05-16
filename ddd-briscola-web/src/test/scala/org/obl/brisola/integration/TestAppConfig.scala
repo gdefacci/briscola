@@ -3,6 +3,7 @@ package org.obl.brisola.integration
 import org.obl.briscola.web.RoutesServletConfig
 import org.obl.raz._
 import org.obl.briscola.web.BriscolaWebApp
+import org.obl.briscola.service.BriscolaApp
 
 object TestAppConfig {
   
@@ -13,7 +14,7 @@ object TestAppConfig {
   lazy val resources = new org.obl.briscola.web.Resources(authority, contextPath, RoutesServletConfig)
   lazy val appRoutes = new org.obl.briscola.web.AppRoutes(resources)
   
-  def simpleWebApp = new BriscolaWebApp(appRoutes, org.obl.briscola.service.Config.createSimpleApp)
+  def simpleWebApp = new BriscolaWebApp(appRoutes, BriscolaApp.simple)
   
   lazy val siteMapUrl = appRoutes.siteMapRoutes.SiteMap.path.render
 }

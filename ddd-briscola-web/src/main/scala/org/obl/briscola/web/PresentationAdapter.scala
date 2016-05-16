@@ -6,6 +6,8 @@ import org.obl.ddd.DomainError
 import org.http4s.Response
 import scalaz.concurrent.Task
 import argonaut.EncodeJson
+import scalaz.Functor
+import scala.language.higherKinds
 
 trait PresentationAdapter[D, P] extends (D => P) {
   def apply(d: D):P
@@ -19,16 +21,11 @@ object PresentationAdapter {
   
   def apply[D,P](d:D)(implicit pa:PresentationAdapter[D,P]) = pa(d)
     
-  implicit def listPresentationAdapter[D, P](implicit pa: PresentationAdapter[D, P]): PresentationAdapter[List[D], presentation.Collection[P]] =
-    PresentationAdapter[List[D], presentation.Collection[P]] { ds:List[D] =>
-      presentation.Collection(ds.map(pa))
+  implicit def functorPresentationAdapter[D, P, F[_]](implicit pa: PresentationAdapter[D, P], F:Functor[F]): PresentationAdapter[F[D], F[P]] =
+    PresentationAdapter[F[D], F[P]] { d:F[D] =>
+      F.map(d)(pa)
     }
-
-  implicit def optionPresentationAdapter[D, P](implicit pa: PresentationAdapter[D, P]): PresentationAdapter[Option[D], Option[P]] =
-    PresentationAdapter[Option[D], Option[P]] { d:Option[D] =>
-      d.map(pa)
-    }
-
+  
 }
 
 class ToPresentation(errorToPresentation: DomainError => Task[Response]) {

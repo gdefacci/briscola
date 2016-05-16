@@ -7,6 +7,7 @@ import org.obl.briscola.presentation.adapters.GamePresentationAdapter
 import org.obl.briscola.presentation.adapters.CompetitionPresentationAdapter
 import org.obl.briscola.presentation.adapters.input.GamePlayersInputAdapter
 import org.obl.briscola.presentation
+import org.obl.briscola.web.plans._
 
 object modules {
 

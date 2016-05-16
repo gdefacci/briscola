@@ -5,6 +5,7 @@ import org.obl.briscola.web.util.JettyWebAppConfig
 import org.obl.raz.Authority
 import org.obl.raz.Path
 import org.obl.briscola.web.util.ContainerConfiguratorImpl
+import org.obl.briscola.service.BriscolaApp
 
 object AppConfigFactory {
 
@@ -12,7 +13,7 @@ object AppConfigFactory {
   val contextPath = Path / "app"
   val resources = new Resources(authority, contextPath, RoutesServletConfig)
   
-  lazy val webAppConfig = new BriscolaWebAppConfig(new AppRoutes(resources), org.obl.briscola.service.Config.simple.app)
+  lazy val webAppConfig = new BriscolaWebAppConfig(new AppRoutes(resources), BriscolaApp.simple)
 
   class ConcretePlayerWebSocketEndPoint extends webAppConfig.ConfiguredPlayerWebSocketEndPoint
 

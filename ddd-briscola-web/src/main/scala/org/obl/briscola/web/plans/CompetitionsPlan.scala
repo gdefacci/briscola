@@ -1,5 +1,6 @@
 package org.obl.briscola
 package web
+package plans
 
 import org.obl.briscola.presentation
 import org.http4s._
@@ -20,9 +21,11 @@ class CompetitionsPlan(val servletPath: org.obl.raz.Path, routes: => Competition
     ) extends ServletPlan {
 
   import org.obl.raz.http4s.RazHttp4s._
-  import org.obl.briscola.web.util.ArgonautEncodeHelper._
   import org.obl.briscola.web.util.ArgonautHttp4sDecodeHelper._
 
+  import scalaz.std.list._
+  import scalaz.std.option
+  
   lazy val onlyClientCompetitionState: PartialFunction[CompetitionState, ClientCompetitionState] = {
     case cc: ClientCompetitionState => cc
   }

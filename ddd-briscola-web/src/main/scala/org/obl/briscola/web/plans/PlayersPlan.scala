@@ -1,5 +1,6 @@
 package org.obl.briscola
 package web
+package plans
 
 import org.http4s.HttpService
 import org.http4s.dsl._
@@ -18,6 +19,9 @@ class PlayersPlan(val servletPath: org.obl.raz.Path, routes: => PlayerRoutes, se
   import jsonEncoders._
   import jsonDecoders._
 
+  import scalaz.std.list._
+  import scalaz.std.option
+  
   lazy val plan = HttpService {
     case GET -> Root / "hello" =>
       Ok("Hello world.")

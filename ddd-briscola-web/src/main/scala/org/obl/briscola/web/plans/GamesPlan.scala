@@ -1,5 +1,6 @@
 package org.obl.briscola
 package web
+package plans
 
 import org.http4s.HttpService
 import org.http4s.dsl._
@@ -8,7 +9,7 @@ import org.obl.briscola.service.BriscolaService
 import org.obl.briscola.web.util.ServletPlan
 
 
-class GamesPlan(val servletPath: org.obl.raz.Path, _routes: => GameRoutes, service: => BriscolaService, toPresentation: => ToPresentation)(
+class GamesPlan(val servletPath: org.obl.raz.Path, routes: => GameRoutes, service: => BriscolaService, toPresentation: => ToPresentation)(
     implicit gameStatePresentationAdapter:PresentationAdapter[GameState, presentation.GameState],
     playerStatePresentationAdapter:PresentationAdapter[PlayerState, presentation.PlayerState],
     finalPlayerStatePresentationAdapter:PresentationAdapter[PlayerFinalState, presentation.PlayerFinalState]) extends ServletPlan {
@@ -18,8 +19,10 @@ class GamesPlan(val servletPath: org.obl.raz.Path, _routes: => GameRoutes, servi
 
   import jsonEncoders._
   import jsonDecoders._
-  lazy val routes = _routes
 
+  import scalaz.std.list._
+  import scalaz.std.option._
+  
   lazy val plan = HttpService {
 
     case GET -> routes.Games(_) =>

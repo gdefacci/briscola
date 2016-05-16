@@ -14,6 +14,22 @@ trait BriscolaApp {
   def tournamentService: TournamentService
 }
 
+object BriscolaApp {
+  
+  def simple = {
+    import impl.simple._
+    
+    new BriscolaAppImpl(
+        new SimpleEventStore[Event](),
+        new SimpleGameRepository(),
+        new SimplePlayerRepository(),
+        new SimpleCompetitionRepository(),
+        new SimpleTournamentRepository()
+    )
+  }
+  
+}
+
 class BriscolaAppImpl(
     val eventsStore: EventStore[Event],
     val gameRepository: GameRepository,
