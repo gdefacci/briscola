@@ -1,4 +1,4 @@
-package org.obl.brisola.webtest
+package org.obl.briscola.webtest
 
 import org.scalatest.FunSuite
 import org.obl.briscola.web.jsonDecoders

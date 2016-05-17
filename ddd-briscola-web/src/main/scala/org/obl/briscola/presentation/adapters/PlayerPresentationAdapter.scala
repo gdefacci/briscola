@@ -1,7 +1,7 @@
 package org.obl.briscola.presentation.adapters
 
-import org.obl.briscola.web.{PlayerRoutes, PlayerWebSocketRoutes, CompetitionRoutes, PresentationAdapter}
-
+import org.obl.briscola.web.{PlayerRoutes, PlayerWebSocketRoutes, CompetitionRoutes}
+import org.obl.briscola.web.util.PresentationAdapter
 import org.obl.briscola.presentation
 import org.obl.briscola.service.player
 import org.obl.briscola.player.{Player => DomainPlayer}

@@ -1,12 +1,16 @@
-package org.obl.briscola
-package web
+package org.obl.briscola.web.util
 
-import scalaz.{ -\/, \/, \/- }
-import org.obl.ddd.DomainError
-import org.http4s.Response
-import scalaz.concurrent.Task
 import argonaut.EncodeJson
+
+import org.obl.ddd.DomainError
+
+import org.http4s.dsl._
+import org.http4s.Response
+
 import scalaz.Functor
+import scalaz.{-\/, \/, \/-}
+import scalaz.concurrent.Task
+
 import scala.language.higherKinds
 
 trait PresentationAdapter[D, P] extends (D => P) {

@@ -6,7 +6,7 @@ import org.obl.briscola.competition._
 import org.obl.briscola.presentation
 import org.obl.briscola.player.PlayerId
 import org.obl.briscola.player.GamePlayers
-import org.obl.briscola.web.PresentationAdapter
+import org.obl.briscola.web.util.PresentationAdapter
 import org.obl.briscola.service.player.PlayerCompetitionEvent
 import org.obl.briscola.service.player.PlayerCompetitionState
 

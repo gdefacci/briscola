@@ -1,4 +1,4 @@
-package org.obl.brisola.integration.tests
+package org.obl.briscola.integration.tests
 
 import org.scalatest.FunSuite
 import org.obl.free._

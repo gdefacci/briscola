@@ -1,16 +1,18 @@
-package org.obl.brisola.integration
+package org.obl.briscola.integration
 package tests
 
-import org.obl.free._
+import org.obl.briscola.presentation.CompetitionAccepted
+import org.obl.briscola.presentation.CompetitionDeclined
+import org.obl.briscola.presentation.CompetitionState
 import org.obl.briscola.presentation.CreatedCompetition
 import org.obl.briscola.presentation.EventAndState
-import org.obl.briscola.presentation.CompetitionAccepted
-import org.obl.briscola.presentation.CompetitionState
-import scalaz.{-\/, \/, \/-}
-import org.obl.briscola.presentation.CompetitionDeclined
-import org.scalatest.FunSuite
-import org.obl.briscola.presentation.GameState
 import org.obl.briscola.presentation.GameStarted
+import org.obl.briscola.presentation.GameState
+import org.obl.briscola.presentation.PlayerLogOn
+import org.obl.free.ScalaTestReporter
+import org.obl.free.Scenario
+import org.scalatest.Finders
+import org.scalatest.FunSuite
 
 class PlayerTest extends FunSuite with PlayersIntegrationTest[Unit] with ScalaTestReporter {
 
@@ -42,7 +44,18 @@ class PlayerTest extends FunSuite with PlayersIntegrationTest[Unit] with ScalaTe
     Scenario("a player that does not exists cant logon", for {
       logPlayer <- playerLoginFails("pippo", "password")
     } yield ()),
-    
+    {
+      import PlayerEventDecoders._
+      
+      Scenario("a player that logon should not receive the self login event", for {
+        player <- createNewPlayer("pippo", "password")
+        player1 <- createNewPlayer("pippo1", "password")
+        evs <- player.events.allOf[EventAndState[PlayerLogOn, List[OutPlayer]]]
+        (selfPlayerLogOn, othrPlayerLogOn) = evs.partition(ev => ev.event.player == player.self)
+        _ <- check(selfPlayerLogOn.isEmpty, "no self PlayerLogOn are received")
+        _ <- check(othrPlayerLogOn.map(_.event.player).head == player1.self, s"${player1.name} LogOn event have been received")
+      } yield ())
+    },
     Scenario("a logged player can start a competion", for {
       player1 <- createNewPlayer("pippo", "password")
       player2 <- createNewPlayer("pluto", "pass")

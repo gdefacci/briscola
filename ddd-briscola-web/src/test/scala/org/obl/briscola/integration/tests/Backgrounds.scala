@@ -1,4 +1,4 @@
-package org.obl.brisola.integration
+package org.obl.briscola.integration
 package tests
 
 import org.obl.free._

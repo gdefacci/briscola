@@ -1,4 +1,4 @@
-package org.obl.brisola.integration
+package org.obl.briscola.integration
 
 import org.obl.briscola.web.util.JettyWebAppConfig
 import org.obl.briscola.web.util.JettyServerFactory

@@ -8,6 +8,8 @@ import scalaz.{ -\/, \/, \/- }
 import org.obl.briscola.player.Player
 import org.obl.briscola.service.PlayerService
 import org.obl.briscola.web.util.ServletPlan
+import org.obl.briscola.web.util.ToPresentation
+import org.obl.briscola.web.util.PresentationAdapter
 
 
 class PlayersPlan(val servletPath: org.obl.raz.Path, routes: => PlayerRoutes, service: => PlayerService, toPresentation:ToPresentation)(

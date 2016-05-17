@@ -13,6 +13,8 @@ import jsonEncoders._
 import org.obl.briscola.web.util.ServletPlan
 import org.obl.briscola.service.player.PlayerCompetitionState
 import org.obl.briscola.presentation.adapters.input.GamePlayersInputAdapter
+import org.obl.briscola.web.util.ToPresentation
+import org.obl.briscola.web.util.PresentationAdapter
 
 class CompetitionsPlan(val servletPath: org.obl.raz.Path, routes: => CompetitionRoutes, service: => CompetitionsService, 
     toModel: => GamePlayersInputAdapter, toPresentation:ToPresentation)(

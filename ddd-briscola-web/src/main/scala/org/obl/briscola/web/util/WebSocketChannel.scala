@@ -1,7 +1,6 @@
-package org.obl.briscola.web
+package org.obl.briscola.web.util
 
 import org.obl.briscola.web.util.ArgonautEncodeHelper.asJson
-
 import argonaut.EncodeJson
 import rx.lang.scala.Observable
 
@@ -28,14 +27,3 @@ object WebSocketChannel {
   } )
 
 }
-
-/*
-class WsPlayerChannelImpl[I,T,R](changes: => Observable[T], filter: => I => PartialFunction[T, R])(implicit enc:EncodeJson[R]) extends WsChannel[I] {
-  def apply(pid:I):Observable[String] = {
-    changes.collect(filter(pid)).map { v =>
-      asJson(v)(enc)
-    }
-  }
-}
-*/
-

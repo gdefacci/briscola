@@ -20,18 +20,19 @@ object AppConfigFactory {
   lazy val configurator = new ContainerConfiguratorImpl[ConcretePlayerWebSocketEndPoint](
       webAppConfig.routes.playerWebSocketRoutes.playerByIdUriTemplate, webAppConfig.webApp.plans)
 
-  lazy val create: JettyWebAppConfig = {
-    val context = JettyWebAppConfig.defaultWebAppContext()
-    context.setContextPath(contextPath.render);
-    JettyWebAppConfig(authority.port, context, configurator)
-  }
 }
 
 object JettyRunner extends App {
 
   val appcfg = AppConfigFactory
   
-  val (server,_) = JettyServerFactory.createServers(appcfg.create)
+  lazy val createJettyWebAppConfig: JettyWebAppConfig = {
+    val context = JettyWebAppConfig.defaultWebAppContext()
+    context.setContextPath(appcfg.contextPath.render);
+    JettyWebAppConfig(appcfg.authority.port, context, appcfg.configurator)
+  }
+  
+  val (server,_) = JettyServerFactory.createServers(createJettyWebAppConfig)
 
   server.start();
   server.dump(System.err);

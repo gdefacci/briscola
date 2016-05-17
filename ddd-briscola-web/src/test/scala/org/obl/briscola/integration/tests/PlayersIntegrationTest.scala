@@ -1,11 +1,11 @@
-package org.obl.brisola.integration
+package org.obl.briscola.integration
 package tests
 
 import org.obl.briscola.web.BriscolaWebApp
 import org.obl.briscola.web.util.ServletContextPlanAdder
-import org.obl.brisola.integration.BriscolaIntegrationTest
-import org.obl.brisola.integration.clients.{PlayersClient, SiteMapClient, StepFactoryHolder}
-import org.obl.brisola.webtest.TestDecoders
+import org.obl.briscola.integration.BriscolaIntegrationTest
+import org.obl.briscola.integration.clients.{PlayersClient, SiteMapClient, StepFactoryHolder}
+import org.obl.briscola.webtest.TestDecoders
 
 trait PlayersIntegrationTest[S] extends BriscolaIntegrationTest[S] with StepFactoryHolder[S] with TestDecoders with SiteMapClient[S] with PlayersClient[S] {
 

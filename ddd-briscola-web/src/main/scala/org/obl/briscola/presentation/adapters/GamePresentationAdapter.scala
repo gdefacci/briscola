@@ -5,7 +5,7 @@ import org.obl.briscola.web.GameRoutes
 import org.obl.briscola.web.PlayerRoutes
 import org.obl.briscola._
 import org.obl.briscola.player.PlayerId
-import org.obl.briscola.web.PresentationAdapter
+import org.obl.briscola.web.util.PresentationAdapter
 import org.obl.briscola.service.player.PlayerGameEvent
 import org.obl.briscola.service.player.PlayerActiveGameState
 

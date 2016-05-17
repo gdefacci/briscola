@@ -19,6 +19,7 @@ object StateChangeFilter {
 }
 
 import StateChangeFilter._
+import org.obl.briscola.web.util.PresentationAdapter
 
 class GamesStateChangeFilter(gameService: => BriscolaService)(
     implicit playerGameEventPrsenetationAdapter: PresentationAdapter[PlayerGameEvent, presentation.BriscolaEvent],
@@ -39,7 +40,7 @@ class PlayersStateChangeFilter(implicit playerPresentationAdapter: PresentationA
   def apply(pid: PlayerId) = {
     case StateChange(_, e @ PlayerLogOff(id), s) if id != pid =>
       EventAndState(PresentationAdapter(e:PlayerEvent), s.map(p => PresentationAdapter(p)))
-    case StateChange(_, e @ PlayerLogOn(_), s) =>
+    case StateChange(_, e @ PlayerLogOn(id), s) if id != pid  =>
       EventAndState(PresentationAdapter(e:PlayerEvent), s.map(p => PresentationAdapter(p)))
   }
 

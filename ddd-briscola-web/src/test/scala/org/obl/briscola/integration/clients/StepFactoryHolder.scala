@@ -1,4 +1,4 @@
-package org.obl.brisola.integration.clients
+package org.obl.briscola.integration.clients
 
 import org.obl.free.StepFactory
 

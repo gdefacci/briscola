@@ -8,6 +8,8 @@ import org.obl.briscola.presentation.adapters.CompetitionPresentationAdapter
 import org.obl.briscola.presentation.adapters.input.GamePlayersInputAdapter
 import org.obl.briscola.presentation
 import org.obl.briscola.web.plans._
+import org.obl.briscola.web.util.WebSocketChannel
+import org.obl.briscola.web.util.ToPresentation
 
 object modules {
 

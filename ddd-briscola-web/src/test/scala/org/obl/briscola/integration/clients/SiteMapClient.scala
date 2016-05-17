@@ -1,6 +1,6 @@
-package org.obl.brisola.integration.clients
+package org.obl.briscola.integration.clients
 
-import org.obl.brisola.webtest.TestDecoders
+import org.obl.briscola.webtest.TestDecoders
 import org.obl.briscola.presentation.SiteMap
 
 trait SiteMapClient[S] { self: TestDecoders with StepFactoryHolder[S] =>

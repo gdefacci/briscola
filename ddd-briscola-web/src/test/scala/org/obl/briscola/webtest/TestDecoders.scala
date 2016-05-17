@@ -1,4 +1,4 @@
-package org.obl.brisola.webtest
+package org.obl.briscola.webtest
 
 //import org.obl.briscola.player.{Players, TeamPlayers, GamePlayers}
 import org.obl.briscola.presentation._
@@ -15,15 +15,17 @@ import org.obl.briscola.web.jsonDecoders
 
 trait TestDecoders {
 
+  import org.obl.briscola.web.jsonDecoders.pathDecoder
+  
   case class OutPlayer(self: Path, name: String)
 
-  implicit lazy val pathDecoder = ArgonautHelper.pathDecoder
+  //implicit lazy val pathDecoder = ArgonautHelper.pathDecoder
 
   implicit lazy val siteMapDecode = DecodeJson.derive[SiteMap]
 
   lazy val privatePlayerDecode = DecodeJson.derive[Player]
 
-  lazy val outPlayerDecode = DecodeJson.derive[OutPlayer]
+  implicit lazy val outPlayerDecode = DecodeJson.derive[OutPlayer]
 
   lazy val playersDecode = DecodeJson[Collection[OutPlayer]] { j =>
     j.as[Map[String, Json]].flatMap { mp =>
@@ -145,6 +147,11 @@ trait TestDecoders {
     implicit lazy val GameDroppedDecode = ofKind(BriscolaEventKind.gameDropped, DecodeJson.derive[GameDropped])
     implicit lazy val CardPlayedDecode = ofKind(BriscolaEventKind.cardPlayed, DecodeJson.derive[CardPlayed])
 
+  }
+  
+  object PlayerEventDecoders {
+    implicit lazy val PlayerLogOnDecode = ofKind(PlayerEventKind.playerLogOn, DecodeJson.derive[PlayerLogOn])
+    implicit lazy val PlayerLogOffDecode = ofKind(PlayerEventKind.playerLogOff, DecodeJson.derive[PlayerLogOff])
   }
 
 

@@ -3,6 +3,10 @@ package org.obl.briscola.web
 import org.http4s.dsl._
 import org.obl.briscola.player.PlayerId
 import org.obl.briscola.service.BriscolaApp
+import org.obl.briscola.web.util.WebSocketEndPoint
+import org.obl.briscola.web.util.ToPresentation
+import org.obl.briscola.web.util.WebSocketChannel
+import org.obl.briscola.web.util.WebSocketConfig
 
 class BriscolaWebApp(val routes: AppRoutes, val app: BriscolaApp) extends PlansModule with ChannelModule[PlayerId] {
 
@@ -17,7 +21,7 @@ class BriscolaWebApp(val routes: AppRoutes, val app: BriscolaApp) extends PlansM
   lazy val Competitions = new modules.Competitions(routes, app, toPresentation)
   
   lazy val plans = SiteMap.plans ++ Players.plans ++ Competitions.plans ++ Games.plans
-  lazy val channel = WebSocketChannel.merge(Seq(Players.channel, Competitions.channel, Games.channel))
+  val channel = WebSocketChannel.merge(Seq(Players.channel, Competitions.channel, Games.channel))
 
 }
 

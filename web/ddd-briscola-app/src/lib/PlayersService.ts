@@ -13,18 +13,18 @@ export class PlayersService {
       return fetch(Player).from(playerSelf)
     }
 	createPlayer(name: string, password:string):Promise<CurrentPlayer> {
-      return Http.POST<Input.Player>(this.siteMap.players, {
-        name: name,
-        password:password
-      }).then( resp => {
-          return resp.json().then( pl => fetch(CurrentPlayer).fromObject(pl) )
-      })
-    }
-    logon(name: string, password:string):Promise<CurrentPlayer>  {
-      return Http.POST<Input.Player>(this.siteMap.playerLogin, {
-        name: name,
-        password:password
-      }).then( resp => resp.json().then( pl => fetch(CurrentPlayer).fromObject(pl) ) )
-    }
+    return Http.POST<Input.Player>(this.siteMap.players, {
+      name: name,
+      password:password
+    }).then( resp => {
+        return resp.json().then( pl => fetch(CurrentPlayer).fromObject(pl) )
+    })
+  }
+  logon(name: string, password:string):Promise<CurrentPlayer>  {
+    return Http.POST<Input.Player>(this.siteMap.playerLogin, {
+      name: name,
+      password:password
+    }).then( resp => resp.json().then( pl => fetch(CurrentPlayer).fromObject(pl) ) )
+  }
 
 }

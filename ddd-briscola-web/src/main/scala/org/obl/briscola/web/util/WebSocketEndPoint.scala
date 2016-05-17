@@ -1,5 +1,4 @@
-package org.obl.briscola
-package web
+package org.obl.briscola.web.util
 
 import org.obl.raz.Path
 import org.slf4j.LoggerFactory
@@ -9,6 +8,7 @@ import com.typesafe.scalalogging.Logger
 import javax.websocket.{CloseReason, Endpoint, EndpointConfig, Session}
 import rx.lang.scala.Observable
 import org.obl.raz.Api.PathDecoder
+import argonaut.EncodeJson
 
 class SessionWrapper(session:Session) {
   
@@ -53,8 +53,6 @@ class WebSocketEndPoint[T](ById:PathDecoder[T], wsConfig:WebSocketConfig[T]) ext
  
   lazy val log = Logger(LoggerFactory.getLogger(getClass))
   
-  import jsonEncoders._
-
   override def onOpen(session: Session, config: EndpointConfig) = {
     log.debug("-" * 80)
     log.debug("Openign websocket "+session.getRequestURI.toString())

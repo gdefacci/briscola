@@ -1,4 +1,4 @@
-package org.obl.brisola.webtest
+package org.obl.briscola.webtest
 
 import org.scalatest.FunSuite
 import scalaz.{ \/- }
@@ -6,7 +6,7 @@ import org.obl.briscola.player.PlayerId
 import org.obl.briscola.GameId
 import org.obl.briscola.competition.CompetitionId
 import org.obl.raz._
-import org.obl.brisola.integration.TestAppConfig
+import org.obl.briscola.integration.TestAppConfig
 
 class AppRoutesTest extends FunSuite {
 
