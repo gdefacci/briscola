@@ -1,38 +1,19 @@
 package com.github.gdefacci.briscola.presentation
 
 import org.obl.raz._
-import org.obl.raz.Path.SegmentsPath
 import org.obl.raz.ext._
 import PathConverter.{ Segment, Param, Fragment }
 import com.github.gdefacci.briscola.player.PlayerId
 import com.github.gdefacci.briscola.game.GameId
 import com.github.gdefacci.briscola.competition.CompetitionId
 
-trait RoutesServletConfig {
-  
-  def players:SegmentsPath 
-  def games:SegmentsPath 
-  def competitions:SegmentsPath 
-  def siteMap:SegmentsPath 
-  def webSocket:SegmentsPath 
-  
-}
-
-object RoutesServletConfig extends RoutesServletConfig {
-  val players = Path / "players"
-  val games = Path / "games"
-  val competitions = Path / "competitions"
-  val siteMap = Path / "site-map"
-  val webSocket = Path / "ws"
-}
-
-class Resources(authority: Authority, applicationPath: SegmentsPath, val servletConfig:RoutesServletConfig) {
+class Resources(authority: Authority, applicationPath: TPath[PathPosition.Segment, PathPosition.Segment], routesConfig:RoutesServletConfig) {
 
   val playerIdSegment = Segment.long.map(PlayerId(_)).contramap((id: PlayerId) => id.id)
 
   object WebSockets {
 
-    object Players extends WebSocketResource(WS(authority), applicationPath, servletConfig.webSocket) {
+    object Players extends WebSocketResource(WS(authority), applicationPath, routesConfig.webSocket) {
 
       lazy val byId = this / "players" / playerIdSegment
 
@@ -42,14 +23,14 @@ class Resources(authority: Authority, applicationPath: SegmentsPath, val servlet
 
   val prefix = HTTP(authority) append applicationPath
 
-  object Players extends ServletResource(prefix, servletConfig.players) {
+  object Players extends ServletResource(prefix, routesConfig.players) {
 
     val byId = this / playerIdSegment
 
     val login = this / "login"
   }
 
-  object Games extends ServletResource(prefix, servletConfig.games) {
+  object Games extends ServletResource(prefix, routesConfig.games) {
 
     private val gameIdSegment = Segment.long.map(GameId(_)).contramap((id: GameId) => id.id)
 
@@ -61,7 +42,7 @@ class Resources(authority: Authority, applicationPath: SegmentsPath, val servlet
 
   }
 
-  object Competitions extends ServletResource(prefix, servletConfig.competitions) {
+  object Competitions extends ServletResource(prefix, routesConfig.competitions) {
 
     private val competitionIdSegment = Segment.long.map(CompetitionId(_)).contramap((id: CompetitionId) => id.id)
 
@@ -77,7 +58,7 @@ class Resources(authority: Authority, applicationPath: SegmentsPath, val servlet
 
   }
 
-  object SiteMap extends ServletResource(prefix, servletConfig.siteMap) {
+  object SiteMap extends ServletResource(prefix,routesConfig.siteMap) {
 
     val players = Players
 
