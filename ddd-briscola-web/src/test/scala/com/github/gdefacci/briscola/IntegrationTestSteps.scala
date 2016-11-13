@@ -63,26 +63,23 @@ object IntegratioTestContextModule {
   val bindInterpreterFactory = Bind.bind[() => InterpreterJettyRunner]
 }
 
+
+object InitialDataModule {
+  
+  def emptyMap[A,B] = Map.empty[A,B] 
+  def emptyOption[A]:Option[A] = None
+}
+
 trait IntegrationTestState {
 
   def context: IntegrationTestContext
 
-  def http[B](step: ClientStep.Free[B]): Try[B] = {
-    context.clientRunner().apply(step)
+  def http[B](step: ClientStep.Free[B]): B = {
+    context.clientRunner().apply(step).get
   }
 }
 
-trait IntegrationTestSteps[T <: IntegrationTestState] extends BDD[T, Try, String] {
-
-  def toTry[E, T](d: E \/ T): Try[T] = d match {
-    case -\/(err) => Failure(new RuntimeException(err.toString()))
-    case \/-(v) => Success(v)
-  }
-
-  implicit val tryMonad = new Monad[Try] {
-    def bind[A, B](fa: Try[A])(f: A => Try[B]): Try[B] = fa.flatMap(f)
-    def point[A](a: => A): Try[A] = Try(a)
-  }
+trait IntegrationTestSteps[T <: IntegrationTestState] extends BDD[T, String] {
 
   def can(expectation: Expectation): Expectation = expectation
   def cant(exp: Expectation): Expectation = expectations { i =>
@@ -91,41 +88,25 @@ trait IntegrationTestSteps[T <: IntegrationTestState] extends BDD[T, Try, String
       case _ => Ok
     })
   }
-  def can(exp: Step): Expectation = expectation { i =>
-    i.flatMap(exp.run) match {
-      case Success(res) => Ok
-      case Failure(err) => Fail(err.getMessage + "\n\n" + err.getStackTrace.mkString("\n") + "\n")
-    }
-  }
-  def cant(exp: Step): Expectation = expectation { i =>
-    i.flatMap(exp.run) match {
-      case Success(res) => Fail(s"Expecting '${exp.description.mkString(" and ")}' to fail but got $res")
-      case Failure(err) => Ok
+  def can(exp: Step): Step = exp
+  
+  def cant(exp: Step): Step = step { i =>
+    Try(exp.run(i)) match {
+      case Success(res) => throw new RuntimeException(s"Expecting '${exp.description.mkString(" and ")}' to fail but got $res")
+      case Failure(err) => i
     }
   }
 
-  def toTestResult(t: Try[TestResult[String]]): TestResult[String] = t match {
-    case Success(res) => res
-    case Failure(err) => Fail(err.getMessage + "\n\n" + err.getStackTrace.mkString("\n") + "\n")
+ private def repeatStep(stp: Step, until: T => Boolean): T => T = { st =>
+    Try(stp.run(st)).map { nst =>
+      if (until(nst)) st
+      else repeatStep(stp, until)(nst)
+    }.get
   }
 
-  def toTestResults(t: Try[Seq[TestResult[String]]]): List[TestResult[String]] = t match {
-    case Success(res) => res.toList
-    case Failure(err) => Fail(err.getMessage + "\n\n" + err.getStackTrace.mkString("\n") + "\n") :: Nil
-  }
+  def repeat(step: Step, until: T => Boolean): Step = this.step(repeatStep(step, until))
 
-  def httpExpect(f: T => ClientStep.Free[TestResult[String]]): Try[T] => TestResult[String] = { st =>
-    toTestResult(st.flatMap { st =>
-      st.http(f(st))
-    })
-  }
-
-  def httpExpectList(f: T => ClientStep.Free[List[TestResult[String]]]): Try[T] => List[TestResult[String]] = { st =>
-    toTestResults(st.flatMap { st =>
-      st.http(f(st))
-    })
-  }
-
+  
 }
 
 trait BaseTestState extends IntegrationTestState {
@@ -136,33 +117,23 @@ trait BaseTestState extends IntegrationTestState {
 trait BaseSteps[S <: BaseTestState] extends IntegrationTestSteps[S] {
   import ClientStepFactory._
 
-  import TestDecoders.PrivatePlayer._
-
   lazy val testClient = new TestClient {}
 
-  def `player received message`(player: String, predicate: String => Boolean): Expectation = expectation(httpExpect { st =>
-    testClient.playerReceivedMessage(st.players(player), predicate)
-  })
+  def `player received message`(player: String, predicate: String => Boolean): Expectation = expectation { st =>
+    st.http(testClient.playerReceivedMessage(st.players(player), predicate))
+  }
 
-  def `players received message`(players: Seq[String], predicate: String => Boolean): Expectation = expectations(httpExpectList { st =>
-    testClient.playersReceivedMessage(players.map(player => st.players(player)), predicate)
-  })
+  def `players received message`(players: Seq[String], predicate: String => Boolean): Expectation = expectations { st =>
+    st.http(testClient.playersReceivedMessage(players.map(player => st.players(player)), predicate))
+  }
 
-  def `all players received message`(predicate: String => Boolean): Expectation = expectations(httpExpectList { st =>
-    testClient.playersReceivedMessage(st.players.values.toSeq, predicate)
-  })
+  def `all players received message`(predicate: String => Boolean): Expectation = expectations { st =>
+    st.http(testClient.playersReceivedMessage(st.players.values.toSeq, predicate))
+  }
 
   def `player starts match`(player: String, otherPlayers: Seq[String]): Step = step { state =>
     state.http {
       testClient.playerStartsCompetition(state.players(player), otherPlayers.map(p=>state.players(p)), """ "single-match" """, """ "all-players" """).map(_ => state)
-//      for {
-//        resp <- post(state.players(player).createCompetition, s"""{
-//          "players":[${otherPlayers.map(p => s""""${state.players(p).self.render}"""").mkString(",")}],
-//          "kind":"single-match",
-//          "deadline":"all-players"
-//        }""")
-//        _ <- check(if (resp.is2xx) Ok else Fail(s"cant create competition ${resp.body}"))
-//      } yield state
     }
   }
 
@@ -174,16 +145,6 @@ trait BaseSteps[S <: BaseTestState] extends IntegrationTestSteps[S] {
           """ "single-match" """, 
           s"""{ "count":$playerCount }"""
       ).map(_ => state)
-//      for {
-//        resp <- post(state.players(player).createCompetition, s"""{
-//        "players":[${otherPlayers.map(p => s""""${state.players(p).self.render}"""").mkString(",")}],
-//        "kind":"single-match",
-//        "deadline":{
-//          "count":$playerCount
-//        }
-//      }""")
-//        _ <- check(if (resp.is2xx) Ok else Fail(s"cant create competition ${resp.body}"))
-//      } yield state
     }
   }
 

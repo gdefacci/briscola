@@ -6,7 +6,7 @@ import scalaz.{-\/, \/, \/-}
 
 case class PlayerTestState(service: PlayerService) 
 
-class PlayerStep( serviceFactory:() => PlayerService) extends BDD[PlayerTestState, scalaz.Id.Id, String] {
+class PlayerStep( serviceFactory:() => PlayerService) extends BDD[PlayerTestState, String] {
   
   def `Given an initial PlayerService`: Source = source { () =>
     PlayerTestState(serviceFactory())

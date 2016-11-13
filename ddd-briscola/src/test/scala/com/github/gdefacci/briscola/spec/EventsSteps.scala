@@ -10,7 +10,7 @@ trait EventsTestState[S, E, Err] {
 
 }
 
-trait EventsSteps[TS <: EventsTestState[S, E, Err], S, E, Err] extends BDD[TS, scalaz.Id.Id,String] {
+trait EventsSteps[TS <: EventsTestState[S, E, Err], S, E, Err] extends BDD[TS, String] {
 
   def `events contain`(event: E => Boolean): Expectation = expectation { state =>
     state.result match {

@@ -13,16 +13,26 @@ object GameFeatures extends GameSteps with Features {
 
   val `can play a card` = scenario(
     `given a game with pippo pluto and minni is started`
-      And can(`current player play`(`a random card`)))
+      And can(`current player play`(`a random card`))
+      And `all players received message`(`a card played event`))
 
   val `can play a turn` = scenario(
     `given a game with pippo pluto and minni is started`
-      And `current player play`(`a random card`)
-      And `current player play`(`a random card`)
-      And can(`current player play`(`a random card`)))
+      And can(`current player play`(`a random card`))
+      And `all players received message`(`a card played event`)
+      And can(`current player play`(`a random card`))
+      And `all players received message`(`a card played event`)
+      And can(`current player play`(`a random card`))
+      And `all players received message`(`a card played event`))
 
-  val features = new Feature("game features", 
-      `can play a card`, 
-      `can play a turn`) :: Nil
+  val `can play a game` = scenario(
+    `given a game with pippo pluto and minni is started`
+      Then can(repeat(`current player play`(`a random card`), until = `game is finished`)))
+
+  val features = new Feature("game features",
+    `can play a card`,
+    `can play a turn`, 
+    `can play a game`
+    ) :: Nil
 
 }

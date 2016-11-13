@@ -10,15 +10,23 @@ import com.github.gdefacci.bdd.TestResult
 import org.obl.raz.Path
 import com.github.gdefacci.briscola.presentation.game.PlayerState
 import com.github.gdefacci.briscola.game.Card
+import com.github.gdefacci.briscola.presentation.EventAndState
+import com.github.gdefacci.briscola.presentation.competition.CreatedCompetition
+import com.github.gdefacci.briscola.presentation.competition.CompetitionState
+import argonaut.DecodeJson
+import scalaz.Unapply
+import scalaz.Applicative
 
 trait TestClient {
 
   import ClientStepFactory._
   import TestDecoders.PrivatePlayer._
+  import TestDecoders.decodePF
 
-  def createPlayer(siteMap: SiteMap, name: String): ClientStep.Free[ClientStep.Response] = for {
-    r <- post(siteMap.players, s"""{ "name":"${name}", "password":"password" }""")
-    _ <- check(if (r.is2xx) Ok else Fail(s"could no create player $name cause ${r.body}"))
+  def createPlayer(siteMap: SiteMap, name: String, password: String): ClientStep.Free[Player] = for {
+    resp <- post(siteMap.players, s"""{ "name":"$name", "password":"$password" }""")
+    _ <- check(if (resp.is2xx) Ok else Fail(s"could no create player $name cause ${resp.body}"))
+    r <- parse[Player](resp.body)
   } yield r
 
   def createPlayers(siteMap: SiteMap, players: Seq[String]): ClientStep.Free[Seq[(String, Player)]] = {
@@ -27,8 +35,7 @@ trait TestClient {
     import Scalaz._
 
     for {
-      playerResps <- players.map(pl => createPlayer(siteMap, pl)).toList.sequenceU
-      resps <- playerResps.map(resp => parse[Player](resp.body)).sequence
+      resps <- players.map(pl => createPlayer(siteMap, pl, "password")).toList.sequenceU
     } yield {
       players.zip(resps)
     }
@@ -59,13 +66,51 @@ trait TestClient {
       _ <- check(if (resp.is2xx) Ok else Fail(s"cant create competition ${resp.body}"))
     } yield resp
 
-  import TestDecoders.{ playerStateDecode }
+  def playerPlaysCard(playerState: Path, card: PlayerState => Card) = {
+    import TestDecoders.{ playerStateDecode }
 
-  def playerPlaysCard(playerState: Path, card: PlayerState => Card) = (for {
-    psResp <- get(playerState)
-    ps <- parse[PlayerState](psResp.body)
-    c = card(ps)
-    resp <- post(playerState, s"""{ "number": ${c.number}, "seed":"${c.seed.toString}"  }""")
-  } yield resp)
+    for {
+      ps <- getAndParse[PlayerState](playerState, "player state")
+      c = card(ps)
+      resp <- post(playerState, s"""{ "number": ${c.number}, "seed":"${c.seed.toString}"  }""")
+    } yield resp
+  }
+
+  def playerAcceptTheCompetition(webSocketPath: Path): ClientStep.Free[TestResult[String]] = {
+    import TestDecoders.{ playerStateDecode, decodePF, competitionStateDecode, stateAndEventDecoder }
+    import TestDecoders.CompetitionEventDecoders._
+
+    for {
+      msgs <- webSocket(webSocketPath)
+      comp = msgs.messages.collectFirst(decodePF[EventAndState[CreatedCompetition, CompetitionState]]).get
+      resp <- post(comp.state.accept.get)
+    } yield if (resp.is2xx) Ok else Fail(s"cant accept competition ${resp.body}")
+  }
+
+  def playerDeclineTheCompetition(webSocketPath: Path): ClientStep.Free[TestResult[String]] = {
+    import TestDecoders.{ playerStateDecode, decodePF, competitionStateDecode, stateAndEventDecoder }
+    import TestDecoders.CompetitionEventDecoders._
+
+    for {
+      msgs <- webSocket(webSocketPath)
+      comp = msgs.messages.collectFirst(decodePF[EventAndState[CreatedCompetition, CompetitionState]]).get
+      resp <- post(comp.state.decline.get)
+    } yield if (resp.is2xx) Ok else Fail(s"cant decline competition ${resp.body}")
+  }
+
+  def getAndParse[T](pth: Path, desc: String)(implicit dj: DecodeJson[T]) = for {
+    resp <- get(pth)
+    _ <- check(if (resp.is2xx) Ok else Fail(s"error fetching $desc at ${pth.render}"))
+    res <- parse[T](resp.body)
+  } yield res
+
+  def messagesOf[T](webSocketPath: Path)(implicit dj: DecodeJson[T]) = {
+    import scalaz._
+    import Scalaz._
+
+    for {
+      ch <- webSocket(webSocketPath)
+    } yield ch.messages.collect(decodePF[T]).toList
+  }
 
 }

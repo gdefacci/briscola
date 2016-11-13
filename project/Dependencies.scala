@@ -7,7 +7,7 @@ object Dependencies extends Build {
 
   val razVersion = "0.9.0-SNAPSHOT"
   val http4sVersion ="0.14.11a"
-  val bddVersion = "0.1.0-SNAPSHOT"
+  val bddVersion = "0.2.0-SNAPSHOT"
   
   val http4s = Seq(
     "org.http4s" %% "http4s-dsl"          % http4sVersion,

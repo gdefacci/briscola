@@ -34,12 +34,14 @@ class PlayerSteps extends IntegrationTestSteps[PlayerIntegrationTestState] {
   }
 
   def `is created player`(name: String, password: String): Step = step { state =>
-    toTry(state.services.player.createPlayer(name, password).map(_ => state))
+    state.services.player.createPlayer(name, password).map(_ => state).toOption.get
   }
 
-  def `create player`(name: String, password: String): Expectation = expectation(httpExpect(state =>
-    for {
-      playerResp1 <- post(state.siteMap.players, s"""{ "name":"${name}", "password":"${password}" }""")
-    } yield if (playerResp1.is2xx) Ok else Fail(s"cant create player $name, cause  ${playerResp1.body}")))
+  def `create player`(name: String, password: String): Expectation = expectation { state =>
+    state.http(
+      for {
+        playerResp1 <- post(state.siteMap.players, s"""{ "name":"${name}", "password":"${password}" }""")
+      } yield if (playerResp1.is2xx) Ok else Fail(s"cant create player $name, cause  ${playerResp1.body}"))
+  }
 
 }
