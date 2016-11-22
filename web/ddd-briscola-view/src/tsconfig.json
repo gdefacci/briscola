@@ -1,39 +1,28 @@
 {
-	"compilerOptions": {
-                "module": "commonjs",
-                "target": "es5",
-                "moduleResolution": "node",
-                "declaration": true,
-                "sourceMap": true,
-                "emitDecoratorMetadata": true,
-                "experimentalDecorators":true,
-                "jsx": "react"
-	},
-	"files": [
-                "libs/es6-promise/es6-promise.d.ts",
-                "libs/reflect-metadata/reflect-metadata.d.ts",
-                "libs/whatwg-fetch/whatwg-fetch.d.ts",
-                "libs/rx/rx.lite.d.ts",
-                "libs/react/react-global.d.ts",
 
-                "../node_modules/flib/index.d.ts",
-                "../node_modules/rest-fetch/index.d.ts",
-                "../node_modules/ddd-briscola-model/index.d.ts",
-                "../node_modules/ddd-briscola-app/index.d.ts",
+  "compilerOptions": {
+        "module": "commonjs",
+        "target": "es5",
+        "moduleResolution": "node",
+        "declaration": true,
+        "sourceMap": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "suppressImplicitAnyIndexErrors": true,
+        "strictNullChecks":true,
+        "forceConsistentCasingInFileNames": true,
+        "noUnusedLocals": true,
+        "preserveConstEnums":true,
+        "jsx": "react"
 
-                "lib/cssClasses.ts",
-                "lib/listeners.ts",
-
-                "lib/TabPane.tsx",
-                "lib/cards.tsx",
-                "lib/PlayerLogin.tsx",
-                "lib/Players.tsx",
-                "lib/PlayerDeck.tsx",
-                "lib/EventsLog.tsx",
-                "lib/GameResult.tsx",
-                "lib/Board.tsx",
-
-                "Main.tsx"
-
-	]
+    },
+    "include": [
+        "libs/**/*.d.ts",
+        "lib/**/*.ts",
+        "lib/**/*.tsx",
+        "Main.tsx",
+        "test/**/*.ts"
+    ]
 }

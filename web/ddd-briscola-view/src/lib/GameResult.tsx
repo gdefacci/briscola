@@ -1,11 +1,6 @@
-import {isNull, Arrays, JsMap, Option} from "flib"
-import {Player, GameState, ActiveGameState} from "ddd-briscola-model"
 import * as Model from "ddd-briscola-model"
-import {GameListener, BoardListener, PlayerSelectionListener, StartCompetitionListener, PlayerLoginListener, PlayerDeckSelectionListener, PlayCardListener} from "./listeners"
 import cssClasses from "./cssClasses"
-import {Card, EmptyCard, CardBack} from "./cards"
 import {TabPane, TabPaneItem} from "./TabPane"
-import {EventsLog} from "./EventsLog"
 import {PlayerDeckSummaryCards} from "./PlayerDeck"
 
 function playersGameResultTabPaneItems(gameRes:Model.PlayersGameResult):TabPaneItem[] {

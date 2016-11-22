@@ -1,4 +1,3 @@
-import {Option} from "flib"
 import {Clickable} from "./listeners"
 import * as Model from "ddd-briscola-model"
 import cssClasses from "./cssClasses"
@@ -17,7 +16,7 @@ export class Card extends React.Component<CardProps, void> {
     const clss = isNull(props.classes) ? "" : props.classes.join(" ")
     const className = `${cssClasses.card} ${clss} card_${Model.Seed[card.seed]}_${card.number}`
     const extra = isNull(props.key) ? {} : { key: props.key };
-    const onClick = (ev) => {
+    const onClick = (ev:React.MouseEvent) => {
       console.log("triggered card onClick")
       props.onClick && props.onClick()
     }

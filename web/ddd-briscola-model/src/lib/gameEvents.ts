@@ -1,6 +1,6 @@
-import {dropReasonChoice, gameStateChoice, GameState, Card, ActiveGameState, DropReason} from "./game"
-import {link, convert, ByPropertySelector} from "rest-fetch"
-import {DomainEvent, byKindChoice, ByKindChoice} from "./model"
+import {gameStateChoice, GameState, Card, ActiveGameState, DropReason, PlayerLeft} from "./game"
+import {link, convert, mapping, ChoiceValue, JsConstructor, Lazy} from "nrest-fetch"
+import {DomainEvent} from "./model"
 import {Player} from "./player"
 
 export enum BriscolaEventKind {
@@ -26,7 +26,7 @@ export class GameStarted implements DomainEvent {
   get eventName() {
      return BriscolaEventKind[BriscolaEventKind.gameStarted]
   }
-  @convert(ActiveGameState)
+  @convert(mapping(ActiveGameState))
   game: ActiveGameState
 }
 
@@ -36,18 +36,19 @@ export class GameDropped implements DomainEvent {
   }
   @link(gameStateChoice)
   game: GameState
-  @convert(dropReasonChoice)
+  @convert(mapping(PlayerLeft))
   dropReason:DropReason
 }
 
-export const briscolaEventChoice = byKindChoice(() =>
-  [{
-    key:BriscolaEventKind[BriscolaEventKind.gameStarted],
-    value:GameStarted
-  }, {
-    key:BriscolaEventKind[BriscolaEventKind.cardPlayed],
-    value:CardPlayed
-  }, {
-    key:BriscolaEventKind[BriscolaEventKind.gameDropped],
-    value:GameDropped
-  }], "game event")
+export const gameEvents:[(a:any) => boolean, () => JsConstructor<any>][] = [[
+    a => a.kind === BriscolaEventKind[BriscolaEventKind.gameStarted],
+    () => GameStarted
+  ], [
+    a => a.kind === BriscolaEventKind[BriscolaEventKind.cardPlayed],
+    () => CardPlayed
+  ], [
+    a => a.kind === BriscolaEventKind[BriscolaEventKind.gameDropped],
+    () => GameDropped
+  ]]
+
+export const briscolaEventChoice:() => ChoiceValue<any> = Lazy.choose("GameEvent", ... gameEvents)

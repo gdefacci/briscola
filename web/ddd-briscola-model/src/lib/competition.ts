@@ -1,7 +1,8 @@
-import {JsMap, Option} from "flib"
-import {Path, DomainEvent, ByKindChoice, byKindChoice} from "./model"
+import {Option} from "flib"
+import {Path} from "./model"
 import {Player} from "./player"
-import {link, convert, Converter, JsConstructor, SimpleConverter, Selector, ByPropertySelector} from "rest-fetch"
+import {arrayOfLinks, convert, Value, ChoiceValue, Lazy} from "nrest-fetch"
+import {toEnum} from "./Util"
 
 export enum MatchKindKind {
   singleMatch, numberOfGamesMatchKind, targetPointsMatchKind
@@ -17,15 +18,13 @@ export enum CompetitionStartDeadlineKind {
 
 export type CompetitionStartDeadline = AllPlayers | OnPlayerCount
 
-export const toCompetitionStartDeadline = Selector.create((wso:{kind:string}) => {
-  switch(wso.kind) {
-    case CompetitionStartDeadlineKind[CompetitionStartDeadlineKind.allPlayers] : return Option.some(AllPlayers)
-    case CompetitionStartDeadlineKind[CompetitionStartDeadlineKind.onPlayerCount] :return Option.some(OnPlayerCount)
-    default: throw new Error(`invalid CompetitionStartDeadline : ${JSON.stringify(wso)}`)
-  }
-})
-
-const stringToCompetitionStartDeadlineKind = SimpleConverter.fromString.andThen(Converter.toEnum<CompetitionStartDeadlineKind>(CompetitionStartDeadlineKind, "CompetitionStartDeadlineKind"))
+export const toCompetitionStartDeadline:() => ChoiceValue<any> = Lazy.choose("CompetitionStartDeadline", [
+  a => a.kind === CompetitionStartDeadlineKind[CompetitionStartDeadlineKind.allPlayers],
+  () => AllPlayers
+], [
+  a => a.kind === CompetitionStartDeadlineKind[CompetitionStartDeadlineKind.onPlayerCount],
+  () => OnPlayerCount
+])
 
 export class AllPlayers {
   get kind(): CompetitionStartDeadlineKind {
@@ -42,17 +41,23 @@ export class OnPlayerCount {
 
 export type MatchKind = SingleMatch | NumberOfGamesMatchKind | TargetPointsMatchKind
 
-
-export const toMatchKind = Selector.create((wso:{kind:string}) => {
-  switch(wso.kind) {
-    case MatchKindKind[MatchKindKind.singleMatch] : return Option.some(SingleMatch)
-    case MatchKindKind[MatchKindKind.numberOfGamesMatchKind] :return Option.some(NumberOfGamesMatchKind)
-    case MatchKindKind[MatchKindKind.targetPointsMatchKind] :return Option.some(TargetPointsMatchKind)
-    default: return Option.none<JsConstructor<any>>()
+/*
+export function toMatchKind(kind:string):MatchKind {
+  switch(kind) {
+    case MatchKindKind[MatchKindKind.singleMatch] : return new SingleMatch
+    case MatchKindKind[MatchKindKind.numberOfGamesMatchKind] :return new NumberOfGamesMatchKind
+    case MatchKindKind[MatchKindKind.targetPointsMatchKind] :return new TargetPointsMatchKind
+    default: throw new Error("invalid match kind "+kind)
   }
-}, "match kind" )
-
-const stringToMatchKindKind = SimpleConverter.fromString.andThen(Converter.toEnum<MatchKindKind>(MatchKindKind, "MatchKindKind"))
+}
+*/
+export const matchKindChoice = Lazy.choose("MatchKind", [
+  (a) => a.kind === MatchKindKind[MatchKindKind.singleMatch],
+  () => SingleMatch
+], [
+  (a) => a.kind === MatchKindKind[MatchKindKind.targetPointsMatchKind],
+  () => TargetPointsMatchKind
+])
 
 export class SingleMatch {
   get kind(): MatchKindKind {
@@ -75,45 +80,45 @@ export class TargetPointsMatchKind {
 }
 
 export class Competition {
-  @link({arrayOf:Player})
+  @convert( arrayOfLinks(Player) )
   players: Player[]
 
-  @convert(toMatchKind)
+  @convert(matchKindChoice)
   kind: MatchKind
 
   @convert(toCompetitionStartDeadline)
   deadline: CompetitionStartDeadline
 }
 
-const stringToCompetitionStateKind = SimpleConverter.fromString.andThen(Converter.toEnum<CompetitionStateKind>(CompetitionStateKind, "CompetitionStateKind"))
+const stringToCompetitionStateKind = Value.string().map(toEnum(CompetitionStateKind, "CompetitionStateKind"))
 
 export class CompetitionState {
   self: Path
 
-  @convert(stringToCompetitionStateKind)
+  @convert(() => stringToCompetitionStateKind)
   kind: CompetitionStateKind
 
   @convert()
   competition: Competition
 
-  @link({arrayOf:Player})
+  @convert(arrayOfLinks(Player))
   acceptingPlayers: Player[]
-  @link({arrayOf:Player})
+  @convert(arrayOfLinks(Player))
   decliningPlayers: Player[]
 
-  @convert(SimpleConverter.optional(SimpleConverter.fromString))
+  @convert(Value.option(Value.string))
   accept: Option<Path>
-  @convert(SimpleConverter.optional(SimpleConverter.fromString))
+  @convert(Value.option(Value.string))
   decline: Option<Path>
 }
 
-export const competitionStateChoice = byKindChoice(() => [{
-  key:CompetitionStateKind[CompetitionStateKind.dropped],
-  value:CompetitionState
-}, {
-  key:CompetitionStateKind[CompetitionStateKind.fullfilled],
-  value:CompetitionState
-}, {
-  key:CompetitionStateKind[CompetitionStateKind.open],
-  value:CompetitionState
-}], "competion state")
+export const competitionStateChoice = Lazy.choose("CompetitionState", [
+  a => a.kind ===CompetitionStateKind[CompetitionStateKind.dropped],
+  () => CompetitionState
+], [
+  a => a.kind ===CompetitionStateKind[CompetitionStateKind.fullfilled],
+  () => CompetitionState
+], [
+  a => a.kind ===CompetitionStateKind[CompetitionStateKind.open],
+  () => CompetitionState
+])

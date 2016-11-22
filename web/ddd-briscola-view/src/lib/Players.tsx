@@ -3,15 +3,6 @@ import {Player} from "ddd-briscola-model"
 import {PlayerSelectionListener} from "./listeners"
 import cssClasses from "./cssClasses"
 
-/*
-import {Card, EmptyCard, CardBack} from "./cards"
-import {TabPane, TabPaneItem} from "./TabPane"
-import {EventsLog} from "./EventsLog"
-import {GameResult} from "./GameResult"
-import {PlayerDeckSummary} from "./PlayerDeck"
-import {PlayerLogin} from "./PlayerLogin"
-*/
-
 export class CurrentPlayer extends React.Component<Player, void> {
   render() {
     var player = this.props;

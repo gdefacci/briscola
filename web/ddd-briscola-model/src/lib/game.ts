@@ -1,7 +1,8 @@
-import {lazy, Option, JsMap} from "flib"
-import {Path, DomainEvent, byKindChoice, ByKindChoice} from "./model"
-import {CurrentPlayer, Player} from "./player"
-import {link, convert, Converter, JsConstructor, SimpleConverter, ByPropertySelector, Selector} from "rest-fetch"
+import { Option, isNull } from "flib"
+import { Path } from "./model"
+import { CurrentPlayer, Player } from "./player"
+import { arrayOfLinks, link, convert, Value, arrayOf, choose, optionalLink, mapping, ChoiceValue, Lazy } from "nrest-fetch"
+import { toEnum } from "./Util"
 
 export enum GameStateKind {
   active, dropped, finished
@@ -15,13 +16,14 @@ export enum DropReasonKind {
   playerLeft
 }
 
-const stringToSeed = SimpleConverter.fromString.andThen(Converter.toEnum(Seed, "Seed"))
+
+const stringToSeed = Value.string().map(toEnum(Seed, "Seed"))
 
 export class Card {
-  @convert(stringToSeed)
+  @convert(() => stringToSeed)
   seed: Seed
   "number": number
-  points:number
+  points: number
 }
 
 export class Move {
@@ -34,7 +36,7 @@ export class Move {
 
 
 export class PlayerScore {
-  @convert({ arrayOf:Card })
+  @convert(arrayOf(Card))
   cards: Card[]
 }
 
@@ -50,13 +52,13 @@ export class PlayerFinalState {
 
 export class PlayerState {
 
-  @convert(Converter.propertyUrl)
+  @convert(Value.getUrl)
   self: Path
 
   @link()
   player: Player
 
-  @convert({ arrayOf:Card })
+  @convert(arrayOf(Card))
   cards: Card[]
 
   @convert()
@@ -68,7 +70,7 @@ export type GameState = FinalGameState | ActiveGameState | DroppedGameState
 export type GameResult = PlayersGameResult | TeamsGameResult
 
 export class PlayersGameResult {
-  @convert({ arrayOf:PlayerFinalState })
+  @convert(arrayOf(PlayerFinalState))
   playersOrderByPoints: PlayerFinalState[]
 
   @convert()
@@ -76,26 +78,24 @@ export class PlayersGameResult {
 }
 
 export class TeamScore {
-  teamName:string
+  teamName: string
 
-  @link({ arrayOf:Player })
-  players:Player[]
+  @convert(arrayOfLinks(Player))
+  players: Player[]
 
-  @convert({ arrayOf:Card })
-  cards:Card[]
+  @convert(arrayOf(Card))
+  cards: Card[]
 
-  points:number
+  points: number
 }
 
 export class TeamsGameResult {
-  @convert({ arrayOf:TeamScore })
+  @convert(arrayOf(TeamScore))
   teamsOrderByPoints: TeamScore[]
 
   @convert()
   winnerTeam: TeamScore
 }
-
-const gameResultChoice = Selector.byPropertyExists([{ key:"playersOrderByPoints", value:PlayersGameResult }, { key:"teamsOrderByPoints", value:TeamsGameResult }])
 
 export class FinalGameState {
   self: Path
@@ -103,25 +103,25 @@ export class FinalGameState {
   @convert()
   briscolaCard: Card
 
-  @convert(gameResultChoice)
-  gameResult:GameResult
-  /*
-  @convert({ arrayOf:PlayerFinalState })
-  playersOrderByPoints: PlayerFinalState[]
+  @convert(choose("GameResult", [
+    (a: any) => !isNull(a.playersOrderByPoints),
+    PlayersGameResult
+  ], [
+      (a: any) => !isNull(a.teamsOrderByPoints),
+      TeamsGameResult
+    ]))
+  gameResult: GameResult
 
-  @convert()
-  winner: PlayerFinalState
-  */
 }
 
 export class ActiveGameState {
   self: Path
   @convert()
   briscolaCard: Card
-  @convert({ arrayOf:Move })
+  @convert(arrayOf(Move))
   moves: Move[]
 
-  @link({ arrayOf:Player })
+  @convert(arrayOfLinks(Player))
   nextPlayers: Player[]
   @link()
   currentPlayer: CurrentPlayer
@@ -129,10 +129,10 @@ export class ActiveGameState {
   isLastHandTurn: Boolean
   isLastGameTurn: Boolean
 
-  @link({arrayOf:Player})
+  @convert(arrayOfLinks(Player))
   players: Player[]
 
-  @link({optionOf:PlayerState})
+  @convert(optionalLink(PlayerState))
   playerState: Option<PlayerState>
 
   deckCardsNumber: number
@@ -141,14 +141,12 @@ export class ActiveGameState {
 export class DropReason {
 }
 
-export const dropReasonChoice = new Selector( ws => Option.some(PlayerLeft) )
-
 export class PlayerLeft extends DropReason {
   @link()
-  player:Player
+  player: Player
 
-  @convert(SimpleConverter.optional(SimpleConverter.fromString))
-  reason:Option<string>
+  @convert(Value.option(Value.string))
+  reason: Option<string>
 }
 
 export class DroppedGameState {
@@ -156,37 +154,37 @@ export class DroppedGameState {
   briscolaCard: Card
   moves: Move[]
 
-  @link({arrayOf:Player})
+  @convert(arrayOfLinks(Player))
   nextPlayers: Player[]
 
-  @convert(dropReasonChoice)
-  dropReason:DropReason
+  @convert(mapping(PlayerLeft))
+  dropReason: DropReason
 }
 
-export const gameStateChoice = byKindChoice(() => [{
-    key:GameStateKind[GameStateKind.active],
-    value:ActiveGameState
-  }, {
-    key:GameStateKind[GameStateKind.dropped],
-    value:DroppedGameState
-  }, {
-    key:GameStateKind[GameStateKind.finished],
-    value:FinalGameState
-  }], "game state choice")
+export const gameStateChoice:() => ChoiceValue<any> = Lazy.choose("GameState", [
+    a => a.kind === GameStateKind[GameStateKind.active],
+    () => ActiveGameState
+  ], [
+    a => a.kind === GameStateKind[GameStateKind.dropped],
+    () => DroppedGameState
+  ], [
+    a => a.kind === GameStateKind[GameStateKind.finished],
+    () => FinalGameState
+  ])
 
 export module GameState {
   export function fold<T>(p: GameState,
-    activeGameState: (p:ActiveGameState) => T,
-    finalGameState: (p:FinalGameState) => T,
-    droppedGameState: (p:DroppedGameState) => T ):T {
-      if (p instanceof ActiveGameState) return activeGameState(p)
-      else if (p instanceof FinalGameState) return finalGameState(p)
-      else if (p instanceof DroppedGameState) return droppedGameState(p)
-      else {
-        console.log("unrecognized GameState")
-        console.log(p)
-        throw new Error("unrecognized GameState ")
-      }
+    activeGameState: (p: ActiveGameState) => T,
+    finalGameState: (p: FinalGameState) => T,
+    droppedGameState: (p: DroppedGameState) => T): T {
+    if (p instanceof ActiveGameState) return activeGameState(p)
+    else if (p instanceof FinalGameState) return finalGameState(p)
+    else if (p instanceof DroppedGameState) return droppedGameState(p)
+    else {
+      console.log("unrecognized GameState")
+      console.log(p)
+      throw new Error("unrecognized GameState ")
+    }
   }
 }
 

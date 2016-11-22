@@ -2,12 +2,12 @@ import {observableWebSocket} from "./Util"
 
 import * as Util from "./Util"
 import {Option, JsMap} from "flib"
-import {DomainEvent, Path, Input, eventAndStateChoice,
-  GameEventAndState, BriscolaEvent, GameState, BriscolaEventKind, ActiveGameState, FinalGameState, GameStarted, Card, gameStateChoice,
-  CompetitionEventAndState, CompetitionEvent, CompetitionState, CompetitionEventKind, CompetitionStateKind,
-  PlayerEventAndState, CurrentPlayer, Player, PlayerEvent, PlayerEventKind} from "ddd-briscola-model"
+import {Path, Input, eventAndStateChoice,
+  GameEventAndState, BriscolaEvent, GameState, ActiveGameState, FinalGameState, Card, gameStateChoice,
+  CompetitionEventAndState, CompetitionEvent, CompetitionState, CompetitionStateKind,
+  PlayerEventAndState, CurrentPlayer, PlayerEvent} from "ddd-briscola-model"
 
-import {fetch, fetchChoose} from "rest-fetch"
+import {ResourceFetch, mapping} from "nrest-fetch"
 
 function gamesMap(ch: Rx.Observable<GameEventAndState>): (p: Path) => Option<GameState> {
   const mapOfGames: JsMap<GameState> = {}
@@ -37,17 +37,17 @@ function competitionsMap(ch: Rx.Observable<CompetitionEventAndState>): (p: Path)
 
 function asGameEventAndState(a:any):Option<GameEventAndState> {
   if (a instanceof GameEventAndState) return Option.some(a)
-  else return Option.none<GameEventAndState>();
+  else return Option.None;
 }
 
 function asCompetitionEventAndState(a:any):Option<CompetitionEventAndState> {
   if (a instanceof CompetitionEventAndState) return Option.some(a)
-  else return Option.none<CompetitionEventAndState>();
+  else return Option.None;
 }
 
 function asPlayerEventAndState(a:any):Option<PlayerEventAndState> {
   if (a instanceof PlayerEventAndState) return Option.some(a)
-  else return Option.none<PlayerEventAndState>();
+  else return Option.None;
 }
 
 export class PlayerService {
@@ -59,12 +59,12 @@ export class PlayerService {
   private gamesMap: (p: Path) => Option<GameState>
   private competitionsMap: (p: Path) => Option<CompetitionState>
 
-	constructor(public player:CurrentPlayer) {
+	constructor(private resourceFetch:ResourceFetch, public player:CurrentPlayer) {
 	  const webSocket:Rx.Observable<GameEventAndState | CompetitionEventAndState | PlayerEventAndState> = observableWebSocket(player.webSocket).flatMap((msgEv: MessageEvent) => {
       const data = msgEv.data
       if (typeof data === "string") {
         const msg = JSON.parse(data)
-        return fetchChoose(eventAndStateChoice).fromObject(msg).then(
+        return resourceFetch.fetchObject(msg, eventAndStateChoice).then(
           (v) => Promise.resolve(v),
           err => {
             console.log("error parsing web socket message")
@@ -96,22 +96,22 @@ export class PlayerService {
       players: players,
       kind: kind,
       deadline: deadlineKind
-    }).then(p => fetch(CompetitionState).fromObject(p))
+    }).then(p => this.resourceFetch.fetchObject(p, mapping(CompetitionState)))
   }
 
-  gameChannelById(gameSelf: Path): Rx.Observable<GameEventAndState> {
+  /*gameChannelById(gameSelf: Path): Rx.Observable<GameEventAndState> {
     return this.gamesChannel.filter(es =>
       (es.game  instanceof ActiveGameState && es.game.self === gameSelf) ||
       (es.game instanceof FinalGameState && es.game.self === gameSelf)
     )
-  }
+  }*/
 
   playCard(gameSelf: Path, mcard: Card): Option<Promise<GameState>> {
     function playerStateUrl(gm: GameState): Option<Path> {
       if (gm instanceof ActiveGameState) {
         return gm.playerState.map(ps => ps.self)
       } else {
-        return Option.none<Path>();
+        return Option.None;
       }
     }
     const card = Input.card(mcard)
@@ -124,7 +124,7 @@ export class PlayerService {
           seed: card.seed
         }).then(resp => {
           return resp.json().then( ws => {
-            return fetchChoose(gameStateChoice).fromObject(ws)
+            return this.resourceFetch.fetchObject(ws, gameStateChoice)
           })
         })
       })
@@ -135,7 +135,7 @@ export class PlayerService {
     return this.competitionsMap(compSelf).flatMap(cs =>
       cs.accept.map(url =>
         Util.Http.POST<void>(url).then(resp =>
-          resp.json().then( ws =>fetch(CompetitionState).fromObject(ws) )
+          resp.json().then( ws => this.resourceFetch.fetchObject(ws, mapping(CompetitionState)) )
         )
       )
     )
@@ -146,7 +146,7 @@ export class PlayerService {
       cs.decline.map(url =>
         Util.Http.POST<void>(url).then(resp =>
           resp.json().then( ws =>
-            fetch(CompetitionState).fromObject(ws)
+            this.resourceFetch.fetchObject(ws, mapping(CompetitionState))
           )
         )
       )

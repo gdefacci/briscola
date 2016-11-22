@@ -1,5 +1,5 @@
 import {JsMap, Option} from "flib"
-import {GameState, ActiveGameState, FinalGameState} from "./game"  
+import {GameState, ActiveGameState, FinalGameState} from "./game"
 import {BriscolaEvent} from "./gameEvents"
 import {CompetitionState} from "./competition"
 import {CompetitionEvent} from "./competitionEvents"
@@ -9,9 +9,9 @@ import * as Input from "./input"
 export module Board {
   export function empty():Board {
     return {
-      player:Option.none<Player>(),
+      player:Option.None,
       players:[],
-      currentGame:Option.none<ActiveGameState>(),
+      currentGame:Option.None,
       activeGames:{},
       finishedGames:{},
       engagedCompetitions:{},
@@ -25,38 +25,38 @@ export module Board {
         maxPlayersNumber:8
       }
     }
-  }   
+  }
 }
 
 /**
-  * FIXME fetch from server, put inside SiteMap? 
+  * FIXME fetch from server, put inside SiteMap?
   */
 export interface AppConfig {
   minPlayersNumber:number
   maxPlayersNumber:number
-} 
+}
 
 export enum ViewFlag {
-  normal, showPlayerCards  
+  normal, showPlayerCards
 }
 
 export interface Board {
-  config:AppConfig  
+  config:AppConfig
 
   player:Option<Player>
   players:Player[]
-  
+
   currentGame:Option<GameState>
   activeGames:JsMap<ActiveGameState>
   finishedGames:JsMap<FinalGameState>
-  
+
   engagedCompetitions:JsMap<CompetitionState>
   competitionSelectedPlayers:JsMap<boolean>
   competitionKind:Input.MatchKind
   competitionDeadlineKind: Input.CompetitionStartDeadline
-  
+
   eventsLog:(BriscolaEvent | CompetitionEvent | PlayerEvent)[]
-  
+
   viewFlag:ViewFlag
 }
 

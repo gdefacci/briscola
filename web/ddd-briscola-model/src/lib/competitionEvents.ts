@@ -1,8 +1,8 @@
-import {Option} from "flib"
-import {CompetitionState} from "./competition"
-import {Path, DomainEvent, ByKindChoice, byKindChoice} from "./model"
-import {Player} from "./player"
-import {link, convert, ByPropertySelector} from "rest-fetch"
+import { Option } from "flib"
+import { CompetitionState } from "./competition"
+import { DomainEvent } from "./model"
+import { Player } from "./player"
+import { link, convert, Value, ChoiceValue, JsConstructor, Lazy } from "nrest-fetch"
 
 export enum CompetitionEventKind {
   createdCompetition, confirmedCompetition, playerAccepted, playerDeclined
@@ -12,19 +12,20 @@ export type CompetitionEvent = CompetitionDeclined | CompetitionAccepted | Confi
 
 export class CompetitionDeclined implements DomainEvent {
   get eventName() {
-     return CompetitionEventKind[CompetitionEventKind.playerDeclined]
+    return CompetitionEventKind[CompetitionEventKind.playerDeclined]
   }
 
   @link()
   player: Player
   @link()
   competition: CompetitionState
+  @convert(Value.option(Value.string))
   reason: Option<string>
 }
 
 export class CompetitionAccepted implements DomainEvent {
   get eventName() {
-     return CompetitionEventKind[CompetitionEventKind.playerAccepted]
+    return CompetitionEventKind[CompetitionEventKind.playerAccepted]
   }
   @link()
   player: Player
@@ -34,7 +35,7 @@ export class CompetitionAccepted implements DomainEvent {
 
 export class ConfirmedCompetition implements DomainEvent {
   get eventName() {
-     return CompetitionEventKind[CompetitionEventKind.confirmedCompetition]
+    return CompetitionEventKind[CompetitionEventKind.confirmedCompetition]
   }
   @link()
   competition: CompetitionState
@@ -42,7 +43,7 @@ export class ConfirmedCompetition implements DomainEvent {
 
 export class CreatedCompetition implements DomainEvent {
   get eventName() {
-     return CompetitionEventKind[CompetitionEventKind.createdCompetition]
+    return CompetitionEventKind[CompetitionEventKind.createdCompetition]
   }
   @link()
   issuer: Player
@@ -50,16 +51,20 @@ export class CreatedCompetition implements DomainEvent {
   competition: CompetitionState
 }
 
-export const competitionEventChoice = byKindChoice(() => [{
-    key:CompetitionEventKind[CompetitionEventKind.createdCompetition],
-    value:CreatedCompetition
-  }, {
-    key:CompetitionEventKind[CompetitionEventKind.confirmedCompetition],
-    value:ConfirmedCompetition
-  }, {
-    key:CompetitionEventKind[CompetitionEventKind.playerAccepted],
-    value:CompetitionAccepted
-  }, {
-    key:CompetitionEventKind[CompetitionEventKind.playerDeclined],
-    value:CompetitionDeclined
-  }], "competition event")
+export const competitionEvents: [(a: any) => boolean, () => JsConstructor<any>][] = [
+  [
+    a => a.kind === CompetitionEventKind[CompetitionEventKind.createdCompetition],
+    () => CreatedCompetition
+  ], [
+    a => a.kind === CompetitionEventKind[CompetitionEventKind.confirmedCompetition],
+    () => ConfirmedCompetition
+  ], [
+    a => a.kind === CompetitionEventKind[CompetitionEventKind.playerAccepted],
+    () => CompetitionAccepted
+  ], [
+    a => a.kind === CompetitionEventKind[CompetitionEventKind.playerDeclined],
+    () => CompetitionDeclined
+  ]
+]
+
+export const competitionEventChoice:() => ChoiceValue<any> = Lazy.choose("CompetitionEvent", ...competitionEvents)
