@@ -4,7 +4,7 @@ export module Http {
 
   function fetchWithBody<B>(mthd: string): (url: string, body?: B) => Promise<Response> {
     return (url, body) => {
-      if (url === undefined || url === null) throw new Error("making request at null url, body : "+body)
+      if (url === undefined || url === null) throw new Error("making request at null url, body : " + body)
 
       const bdy = (body !== undefined && body !== null) ? JSON.stringify(body) : undefined
       return window.fetch(url, {
@@ -53,8 +53,8 @@ export module Http {
     }
   }
 
-  export function createRequestFactory(reqInit: RequestInit): (url:string) => Request {
-    return (url:string) => {
+  export function createRequestFactory(reqInit: RequestInit): (url: string) => Request {
+    return (url: string) => {
       return new Request(url, reqInit);
     }
   }
@@ -145,4 +145,38 @@ export function objectAssign<A, B>(target: A, source: B): A & B {
 
 export function copy<A, B>(a: A, b: B): A & B {
   return objectAssign(objectAssign({}, a), b);
+}
+
+export function merge<A, B>(target: A, source: B): A & B {
+  if (target === undefined || target === null) {
+    throw new TypeError('Cannot convert undefined or null to object');
+  }
+
+  const output = Object(target);
+  if (source !== undefined && source !== null) {
+    for (const nextKey in source) {
+      if (source.hasOwnProperty(nextKey)) {
+        const v = source[nextKey]
+        if (v !== null || v !== undefined) {
+          const oldv = output[nextKey]
+          if (Array.isArray(v)) {
+            if (Array.isArray(oldv)) {
+              output[nextKey] = oldv.concat(v)
+            } else {
+              output[nextKey] = v
+            }
+          } else if (typeof v === "object") {
+            if (typeof oldv === "object") {
+              output[nextKey] = merge(oldv, v)
+            } else {
+              output[nextKey] = v
+            }
+          } else {
+            output[nextKey] = v
+          }
+        }
+      }
+    }
+  }
+  return output;
 }

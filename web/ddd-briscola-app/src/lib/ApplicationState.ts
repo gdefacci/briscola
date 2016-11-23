@@ -8,8 +8,8 @@ import { Http } from "./Util"
 export interface ApplicationState {
   playersService: PlayersService
   playerService: Option<PlayerService>
-  board: Board
   createPlayerService: (player: CurrentPlayer) => PlayerService
+  board: Board
 }
 
 export function initialState(entryPoint: string): Promise<ApplicationState> {

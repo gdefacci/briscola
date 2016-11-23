@@ -1,7 +1,8 @@
 import * as Reducers from "./Reducers"
-import {Command} from "./Command"
+import { Command } from "./Command"
 
-export  const ApplicationDispatch: (cmd: Reducers.Command) => Reducers.AsynchStateChange = (cmd: Command) => {
+export default function applicationDispatch(): (cmd: Command) => Reducers.AsynchStateChange {
+  return (cmd) => {
     switch (cmd.type) {
       case "startApplication": return Reducers.synchStateChange(st => st)
       case "createPlayer":
@@ -21,3 +22,4 @@ export  const ApplicationDispatch: (cmd: Reducers.Command) => Reducers.AsynchSta
       case "updatePlayersState": return Reducers.synchReducer(Reducers.updatePlayersState)(cmd)
     }
   }
+}

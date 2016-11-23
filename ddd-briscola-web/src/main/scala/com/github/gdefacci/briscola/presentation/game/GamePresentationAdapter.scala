@@ -84,7 +84,7 @@ class GamePresentationAdapter(gameRoutes: GameRoutes, playerRoutes: PlayerRoutes
     case model.GameDropped(dropReason) => GameDropped(gameRoutes.GameById.encode(ev.gameId), dropReasonAdapter(dropReason) )
     case model.CardPlayed(pid, crd) => CardPlayed(
       gameRoutes.GameById.encode(ev.gameId),
-      playerRoutes.PlayerById.encode(ev.playerId),
+      playerRoutes.PlayerById.encode(pid),
       cardAdapter(crd))
   })
 

@@ -34,7 +34,8 @@
   },
   "scripts": {
     "clean": "rimraf index.js index.js.map index.d.ts lib/*",
-    "prepublish": "tsc -p src --outDir ."
+    "prepublish": "tsc -p src --outDir .",
+    "test": "jasmine-node --verbose --color test"
   },
   "types": "index.d.ts"
 }

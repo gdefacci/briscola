@@ -1,20 +1,16 @@
-export default class CommandDispatcher<C,S> {
-  private currentState:S
-  private changesChannel= new Rx.ReplaySubject<S>()
+export default function commandDispatcher<C, S>(
+  changesChannel: Rx.ReplaySubject<S>,
+  dispatchFuntion: (cmdId: C) => ((state: S, dispatch: (cmd: C) => Promise<S>) => Promise<S>),
+  initialState: S): (cmd: C) => Promise<S> {
 
-  constructor(private select:(cmdId:C) => (state:S, exec:(c:C) => Promise<S>) => Promise<S>, initialState:S) {
-    this.currentState = initialState
-  }
-
-  dispatch(command:C):Promise<S> {
-    return this.select(command)(this.currentState, (cmd) => this.dispatch(cmd) ).then( newState => {
-      this.currentState = newState
-      this.changesChannel.onNext(newState)
+  let currentState: S = initialState
+  const dispatch: (cmd: C) => Promise<S> = (cmd: C) => {
+    const reducer = dispatchFuntion(cmd)
+    return reducer(currentState, dispatch).then(newState => {
+      currentState = newState
+      changesChannel.onNext(newState)
       return newState
     })
   }
-
-  changes():Rx.Observable<S> {
-    return this.changesChannel
-  }
+  return dispatch;
 }
