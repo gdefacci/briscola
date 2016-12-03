@@ -1,6 +1,7 @@
-import { observableWebSocket } from "./Util"
+import {Observable} from '@reactivex/rxjs';
 
 import * as Util from "./Util"
+import {HttpClient} from "./Http"
 import { Option } from "flib"
 import {
   Path, Input, eventAndStateChoice,
@@ -27,13 +28,13 @@ function asPlayerEventAndState(a: any): Option<PlayerEventAndState> {
 }
 
 export class PlayerService {
-  gamesChannel: Rx.Observable<GameEventAndState>
-  competitionsChannel: Rx.Observable<CompetitionEventAndState>
-  playersChannel: Rx.Observable<PlayerEventAndState>
-  eventsLog: Rx.Observable<BriscolaEvent | CompetitionEvent | PlayerEvent>
+  gamesChannel: Observable<GameEventAndState>
+  competitionsChannel: Observable<CompetitionEventAndState>
+  playersChannel: Observable<PlayerEventAndState>
+  eventsLog: Observable<BriscolaEvent | CompetitionEvent | PlayerEvent>
 
-  constructor(private resourceFetch: ResourceFetch, public player: CurrentPlayer) {
-    const webSocket: Rx.Observable<GameEventAndState | CompetitionEventAndState | PlayerEventAndState> = observableWebSocket(player.webSocket).flatMap((msgEv: MessageEvent) => {
+  constructor(private resourceFetch: ResourceFetch, private http:HttpClient, webSocketFactory:(url: string) => Observable<MessageEvent>, public player: CurrentPlayer) {
+    const webSocket: Observable<GameEventAndState | CompetitionEventAndState | PlayerEventAndState> = webSocketFactory(player.webSocket).flatMap((msgEv: MessageEvent) => {
       const data = msgEv.data
       if (typeof data === "string") {
         const msg = JSON.parse(data)
@@ -62,7 +63,7 @@ export class PlayerService {
   }
 
   createCompetition(players: Path[], kind: Input.MatchKind, deadlineKind: Input.CompetitionStartDeadline): Promise<CompetitionState> {
-    return Util.Http.POST<Input.Competition>(this.player.createCompetition, {
+    return this.http.POST<Input.Competition>(this.player.createCompetition, {
       players: players,
       kind: kind,
       deadline: deadlineKind
@@ -75,7 +76,7 @@ export class PlayerService {
     const url: Option<Path> = gameState.playerState.map(ps => ps.self)
 
     return url.map(url => {
-      return Util.Http.POST<Input.Card>(url, {
+      return this.http.POST<Input.Card>(url, {
         "number": card.number,
         seed: card.seed
       }).then(resp => {
@@ -88,13 +89,13 @@ export class PlayerService {
 
   acceptCompetition(cs: CompetitionState): Option<Promise<CompetitionState>> {
     return cs.accept.map(url =>
-      Util.Http.POST<void>(url).then(resp =>
+      this.http.POST<void>(url).then(resp =>
         resp.json().then(ws => this.resourceFetch.fetchObject(ws, mapping(CompetitionState)))))
   }
 
   declineCompetition(cs: CompetitionState): Option<Promise<CompetitionState>> {
     return cs.decline.map(url =>
-      Util.Http.POST<void>(url).then(resp =>
+      this.http.POST<void>(url).then(resp =>
         resp.json().then(ws => this.resourceFetch.fetchObject(ws, mapping(CompetitionState)))))
   }
 

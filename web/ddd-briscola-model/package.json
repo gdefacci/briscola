@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "flib": "file:../../../typescript-projects/flib",
-    "rest-fetch": "file:../../../typescript-projects/nrest-fetch",
+    "nrest-fetch": "file:../../../typescript-projects/nrest-fetch",
     "es6-promise": "^4.0.5",
     "reflect-metadata": "0.1.8",
     "whatwg-fetch": "^2.0.1"

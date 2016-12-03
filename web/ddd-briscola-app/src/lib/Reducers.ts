@@ -12,20 +12,6 @@ export type AsynchStateChange = (state: ApplicationState, dispatch: (cmd: Comman
 export type ReducerType<C> = (command: C) => StateChange
 export type AsynchReducerType<C> = (command: C) => AsynchStateChange
 
-export function synchReducer<C>(rt: ReducerType<C>): AsynchReducerType<C> {
-  return (command: C) => synchStateChange(rt(command))
-}
-export function synchStateChange(sc: StateChange): AsynchStateChange {
-  return (st, d) => {
-    try {
-      const r = sc(st, d)
-      return Promise.resolve(r)
-    } catch (e) {
-      return Promise.reject(e)
-    }
-  }
-}
-
 export const playerLogon: AsynchReducerType<Commands.PlayerLogon | Commands.CreatePlayer> = (command) => (state, dispatch): Promise<ApplicationState> => {
   const ps = state.playersService
   const createPlayer = (command instanceof Commands.PlayerLogon) ? ps.logon(command.playerName, command.password) : ps.createPlayer(command.playerName, command.password)

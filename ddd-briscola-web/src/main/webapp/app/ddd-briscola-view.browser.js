@@ -103,17 +103,16 @@
 	var App;
 	(function (App) {
 	    function create(entryPoint) {
-	        return new AppImpl(entryPoint, ApplicationDispatch_1.default());
+	        return new AppImpl(ApplicationState_1.initialState(entryPoint), ApplicationDispatch_1.default());
 	    }
 	    App.create = create;
 	})(App = exports.App || (exports.App = {}));
 	var AppImpl = (function () {
-	    function AppImpl(entryPoint, reducerFunction) {
+	    function AppImpl(initState, reducerFunction) {
 	        var _this = this;
 	        this.changesChannel = new Rx.ReplaySubject();
-	        var initState = ApplicationState_1.initialState(entryPoint);
 	        this.dispatcher = initState.then(function (state) {
-	            return CommandsDispatcher_1.default(_this.changesChannel, reducerFunction, state);
+	            return CommandsDispatcher_1.default(state, reducerFunction, function (s) { return _this.changesChannel.onNext(s); });
 	        });
 	        this.displayChannel = Rx.Observable.fromPromise(this.dispatcher).flatMap(function (d) { return _this.changesChannel.map(function (s) { return s.board; }); });
 	        this.displayChannel.subscribe(function (ev) {
@@ -138,13 +137,13 @@
 /***/ function(module, exports) {
 
 	"use strict";
-	function commandDispatcher(changesChannel, dispatchFuntion, initialState) {
+	function commandDispatcher(initialState, dispatchFuntion, effect) {
 	    var currentState = initialState;
 	    var dispatch = function (cmd) {
 	        var reducer = dispatchFuntion(cmd);
 	        return reducer(currentState, dispatch).then(function (newState) {
 	            currentState = newState;
-	            changesChannel.onNext(newState);
+	            effect(newState);
 	            return newState;
 	        });
 	    };
@@ -176,8 +175,6 @@
 	            playersService: new PlayersService_1.PlayersService(resourceFetch, siteMap),
 	            playerService: flib_1.Option.None,
 	            board: ddd_briscola_model_1.Board.empty(),
-	            gameStateMap: {},
-	            competitionStateMap: {},
 	            createPlayerService: createPlayerService
 	        };
 	    });
@@ -2787,12 +2784,11 @@
 	        var board = Util_1.copy(state.board, {
 	            player: flib_1.Option.some(player)
 	        });
-	        var createPlayerService = state.createPlayerService, playersService = state.playersService, gameStateMap = state.gameStateMap, competitionStateMap = state.competitionStateMap;
+	        var createPlayerService = state.createPlayerService, playersService = state.playersService;
 	        return {
 	            playersService: playersService,
 	            playerService: flib_1.Option.some(playerService),
 	            board: board,
-	            gameStateMap: gameStateMap, competitionStateMap: competitionStateMap,
 	            createPlayerService: createPlayerService
 	        };
 	    });
@@ -2802,12 +2798,11 @@
 	        var game = state.board.currentGame.fold(function () { return Promise.reject(new Error("no current game")); }, function (g) { return (g instanceof ddd_briscola_model_1.ActiveGameState) ? Promise.resolve(g) : Promise.reject(new Error("game is not active")); });
 	        return game.then(function (game) {
 	            playerService.playCard(game, command.card);
-	            var createPlayerService = state.createPlayerService, playersService = state.playersService, board = state.board, gameStateMap = state.gameStateMap, competitionStateMap = state.competitionStateMap;
+	            var createPlayerService = state.createPlayerService, playersService = state.playersService, board = state.board;
 	            var nst = {
 	                playersService: playersService,
 	                playerService: flib_1.Option.some(playerService),
 	                board: board,
-	                gameStateMap: gameStateMap, competitionStateMap: competitionStateMap,
 	                createPlayerService: createPlayerService,
 	            };
 	            return nst;
@@ -2837,12 +2832,11 @@
 	}; };
 	function boardReducer(br) {
 	    return function (command) { return function (state) {
-	        var createPlayerService = state.createPlayerService, playersService = state.playersService, playerService = state.playerService, gameStateMap = state.gameStateMap, competitionStateMap = state.competitionStateMap;
+	        var createPlayerService = state.createPlayerService, playersService = state.playersService, playerService = state.playerService;
 	        return {
 	            playersService: playersService,
 	            playerService: playerService,
 	            board: br(command)(state.board),
-	            gameStateMap: gameStateMap, competitionStateMap: competitionStateMap,
 	            createPlayerService: createPlayerService
 	        };
 	    }; };

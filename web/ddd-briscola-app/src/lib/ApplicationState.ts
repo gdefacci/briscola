@@ -3,7 +3,9 @@ import { PlayersService } from "./PlayersService"
 import { PlayerService } from "./PlayerService"
 import { ResourceFetch, ExtraPropertiesStrategy, httpCacheFactory, mapping } from "nrest-fetch"
 import { Board, SiteMap, CurrentPlayer } from "ddd-briscola-model"
-import { Http } from "./Util"
+import { HttpConfig, HttpClient, browserHttpClient } from "./Http"
+import { observableWebSocket } from "./Util"
+import {Observable} from '@reactivex/rxjs';
 
 export interface ApplicationState {
   playersService: PlayersService
@@ -13,15 +15,25 @@ export interface ApplicationState {
 }
 
 export function initialState(entryPoint: string): Promise<ApplicationState> {
-  const reqFactory = Http.createRequestFactory({
+  const reqFactory = HttpConfig.createRequestFactory({
     method: "GET"
   })
-  const resourceFetch = new ResourceFetch(ExtraPropertiesStrategy.copy, httpCacheFactory(reqFactory, Http.jsonResponseReader))
-  const createPlayerService = (player: CurrentPlayer) => new PlayerService(resourceFetch, player)
+  const resourceFetch = new ResourceFetch(ExtraPropertiesStrategy.copy, httpCacheFactory(reqFactory, HttpConfig.jsonResponseReader))
+  const webSocketFactory = (url:string) => observableWebSocket(url)
+  return createInitialState(resourceFetch, browserHttpClient, webSocketFactory, entryPoint)
+}
+
+export function createInitialState(
+  resourceFetch:ResourceFetch,
+  httpClient:HttpClient,
+  webSocketFactory:(url: string) => Observable<MessageEvent>,
+  entryPoint: string):Promise<ApplicationState> {
+
+  const createPlayerService = (player: CurrentPlayer) => new PlayerService(resourceFetch, httpClient, webSocketFactory, player)
 
   return resourceFetch.fetchResource(entryPoint, mapping(SiteMap)).then(siteMap => {
     return {
-      playersService: new PlayersService(resourceFetch, siteMap),
+      playersService: new PlayersService(resourceFetch, httpClient, siteMap),
       playerService: Option.None,
       board: Board.empty(),
       createPlayerService

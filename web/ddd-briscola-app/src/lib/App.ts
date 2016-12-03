@@ -3,31 +3,33 @@ import { Board } from "ddd-briscola-model"
 import commandDispatcher from "./CommandsDispatcher"
 import { ApplicationState, initialState } from "./ApplicationState"
 import applicationDispatch  from "./ApplicationDispatch"
-import * as Reducers from "./Reducers"
+import {AsynchStateChange} from "./Red"
+import {Observable, ReplaySubject} from '@reactivex/rxjs';
 
 export interface App {
-  displayChannel: Rx.Observable<Board>
-  exec(cmd: Command): void
+  displayChannel: Observable<Board>
+  exec(cmd: Command): Promise<void>
 }
 
 export module App {
-  export function create(entryPoint: string): App {
-    return new AppImpl(entryPoint, applicationDispatch())
+  export function create(sitemapUrlOrInitialState:string|Promise<ApplicationState>): App {
+    const state0 = typeof sitemapUrlOrInitialState === "string" ? initialState(sitemapUrlOrInitialState) : sitemapUrlOrInitialState;
+    return new AppImpl(state0, applicationDispatch())
   }
 }
 
 class AppImpl implements App {
 
-  displayChannel: Rx.Observable<Board>
+  displayChannel: Observable<Board>
   dispatcher: Promise<(cmd: Command) => Promise<ApplicationState>>
-  private changesChannel= new Rx.ReplaySubject<ApplicationState>()
+  private changesChannel= new ReplaySubject<ApplicationState>()
 
-  constructor(entryPoint: string, reducerFunction:(cmd: Command) => Reducers.AsynchStateChange) {
-    const initState = initialState(entryPoint)
+  constructor(initState:Promise<ApplicationState>, reducerFunction:(cmd: Command) => AsynchStateChange<ApplicationState,Command,Command>) {
     this.dispatcher = initState.then(state =>
-      commandDispatcher(this.changesChannel, reducerFunction, state)
+      commandDispatcher(state, reducerFunction, (s) => this.changesChannel.next(s))
     )
-    this.displayChannel = Rx.Observable.fromPromise(this.dispatcher).flatMap(d => this.changesChannel.map(s => s.board));
+    this.displayChannel = Observable.fromPromise(this.dispatcher).flatMap(d => this.changesChannel.map(s => s.board));
+
     this.displayChannel.subscribe(ev => {
       console.log("display channel ")
       console.log(ev)
@@ -37,8 +39,8 @@ class AppImpl implements App {
     })
   }
 
-  exec(cmd: Command): void {
-    this.dispatcher.then(dispatch => {
+  exec(cmd: Command): Promise<void> {
+    return this.dispatcher.then(dispatch => {
       dispatch(cmd).catch(err => console.error(err))
     });
   }

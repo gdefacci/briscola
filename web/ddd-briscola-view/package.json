@@ -29,6 +29,7 @@
     "typescript": "2.0.9"
   },
   "dependencies": {
+    "@reactivex/rxjs": "^5.0.0-rc.4",
     "ddd-briscola-app": "file:../ddd-briscola-app",
     "ddd-briscola-model": "file:../ddd-briscola-model",
     "flib": "file:../../../typescript-projects/flib",
@@ -36,7 +37,6 @@
     "extract-text-webpack-plugin": "^1.0.1",
     "react": "15.4.0",
     "react-dom": "15.4.0",
-    "rx": "4.1.0",
     "webpack": "^1.12.14"
   },
   "scripts": {
